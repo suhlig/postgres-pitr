@@ -7,24 +7,34 @@
         name: sandbox
         user: foobar
         password: "{{ lookup('password', '.postgres-password') }}"
-        version: '9.5'
+        version: '11'
 
   handlers:
     - name: PostgreSQL Restarted
       service:
         name: postgresql
         state: restarted
-      become_user: postgres
 
   tasks:
+    - name: PostgreSQL repo key is available
+      apt_key:
+        url: https://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc
+        state: present
+
+    - name: PostgreSQL repository is present
+      apt_repository:
+        repo: 'deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main'
+        state: present
+        filename: pgdg
+        update_cache: true
+
     - name: PostgreSQL is installed
       apt:
         name:
-          - postgresql
-          - postgresql-contrib
+          - "postgresql-{{ db.version }}"
+          - "postgresql-contrib-{{ db.version }}"
           - libpq-dev
           - python3-psycopg2
-        update_cache: true
         state: present
       tags: packages
 
@@ -63,6 +73,7 @@
     - name: Allow authenticated connections from 10.0.0.0
       lineinfile:
         path: "/etc/postgresql/{{ db.version }}/main/pg_hba.conf"
+        regexp: '^host all all 10.0.0.0'
         line: "host all all 10.0.0.0/8 md5"
       notify:
         - PostgreSQL Restarted
@@ -77,7 +88,7 @@
         - PostgreSQL Restarted
       become_user: postgres
 
-    - name: Create PITR directories
+    - name: PITR directories are present
       file:
         path: "/var/lib/postgresql/{{ db.version }}/{{ item }}"
         state: directory

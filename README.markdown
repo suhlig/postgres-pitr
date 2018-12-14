@@ -1,4 +1,11 @@
-# Spike on Postgres PITR Backup & Restore
+# Spike on Postgres PITR
+
+# TL;DR
+
+```sh
+$ vagrant up
+$ ginkgo test
+```
 
 # Development
 
@@ -19,10 +26,10 @@ $ go get \
      github.com/lib/pq
 ```
 
-## Run
+## Iterate
 
 ```sh
-$ ginkgo watch
+$ ginkgo watch test
 ```
 
 # References

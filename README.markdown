@@ -3,9 +3,10 @@
 # TL;DR
 
 ```sh
-$ vagrant up
-$ ginkgo test
+$ tmuxinator local
 ```
+
+When done, issue `tmuxinator stop local`, and the VM will be shut down, too.
 
 # Development
 

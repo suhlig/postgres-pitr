@@ -1,0 +1,22 @@
+name: <%= File.basename(Dir.pwd) %>
+
+on_project_first_start: >-
+  go get
+  github.com/onsi/ginkgo/ginkgo
+  github.com/onsi/gomega
+  github.com/lib/pq
+on_project_start: vagrant up
+on_project_stop: vagrant halt
+
+windows:
+  - test:
+      panes:
+        - ginkgo watch test
+        -
+  - deploy:
+      panes:
+        - "fswatch -r ansible/playbook.yml | xargs -I {} vagrant provision"
+        - vagrant ssh
+  - db:
+      panes:
+        - "psql postgres://foobar:<%= File.read('ansible/.postgres-password').chomp %>@localhost:15432/sandbox"

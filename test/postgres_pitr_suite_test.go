@@ -9,5 +9,5 @@ import (
 
 func TestPostgresPitr(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "PostgresPitr Suite")
+	RunSpecs(t, "PostgreSQL PITR Suite")
 }

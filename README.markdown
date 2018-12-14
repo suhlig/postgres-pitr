@@ -8,6 +8,23 @@ Provision if the playbook has changed:
 $ fswatch -r ansible/playbook.yml | xargs -I {} vagrant provision
 ```
 
+# Tests
+
+## Setup
+
+```sh
+$ go get \
+     github.com/onsi/ginkgo/ginkgo \
+     github.com/onsi/gomega \
+     github.com/lib/pq
+```
+
+## Run
+
+```sh
+$ ginkgo watch
+```
+
 # References
 
 * [anishnath](https://github.com/anishnath/postgres)

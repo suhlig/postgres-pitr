@@ -1,0 +1,4 @@
+*.retry
+.postgres-password
+.vagrant
+*.log

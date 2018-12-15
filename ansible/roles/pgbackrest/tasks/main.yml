@@ -34,6 +34,9 @@
     - PostgreSQL Restarted
   become_user: postgres
 
+- name: PostgreSQL is restarted
+  meta: flush_handlers
+
 - name: Stanza exists
   command: pgbackrest --stanza={{ pgbackrest.stanza }} stanza-create
   args:

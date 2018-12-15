@@ -1,0 +1,47 @@
+- name: Program is installed
+  apt:
+    name:
+      - pgbackrest
+    state: present
+  tags: packages
+
+- name: Config file is up to date
+  template:
+    src: pgbackrest.conf.j2
+    dest: /etc/pgbackrest.conf
+    owner: postgres
+    group: postgres
+    mode: 0644
+
+- name: Repository is present
+  file:
+    path: /var/lib/pgbackrest
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: 0750
+
+- name: Archiving is configured
+  lineinfile:
+    path: "/etc/postgresql/{{ db.version }}/{{ db.cluster_name }}/postgresql.conf"
+    line: "{{ item }}"
+  loop:
+    - 'wal_level = hot_standby'
+    - 'max_wal_senders = 3'
+    - 'archive_mode = on'
+    - "archive_command = 'pgbackrest --stanza={{ pgbackrest.stanza }} archive-push %p'"
+  notify:
+    - PostgreSQL Restarted
+  become_user: postgres
+
+- name: Stanza exists
+  command: pgbackrest --stanza={{ pgbackrest.stanza }} stanza-create
+  args:
+    creates:
+      - /var/lib/pgbackrest/archive/{{ pgbackrest.stanza }}/archive.info
+      - /var/lib/pgbackrest/backup/{{ pgbackrest.stanza }}/backup.info
+  become_user: postgres
+
+- name: Stanza is valid
+  command: pgbackrest --stanza={{ pgbackrest.stanza }} check
+  become_user: postgres

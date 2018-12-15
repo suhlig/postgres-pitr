@@ -10,3 +10,5 @@ db:
   # params:
   #   sslmode: verify-full
   #   connect_timeout: 10
+pgbackrest:
+  stanza: pitr

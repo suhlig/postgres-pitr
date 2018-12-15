@@ -1,3 +1,4 @@
+<% require_relative 'lib/pitr/config' %>
 name: <%= File.basename(Dir.pwd) %>
 
 on_project_first_start: >-
@@ -5,6 +6,7 @@ on_project_first_start: >-
   github.com/onsi/ginkgo/ginkgo
   github.com/onsi/gomega
   github.com/lib/pq
+  gopkg.in/yaml.v2
 on_project_start: vagrant up
 on_project_stop: vagrant halt
 
@@ -13,10 +15,10 @@ windows:
       panes:
         - ginkgo watch test
         -
-  - deploy:
+  - vm:
       panes:
         - "fswatch -r ansible/playbook.yml | xargs -I {} vagrant provision"
         - vagrant ssh
   - db:
       panes:
-        - "psql postgres://foobar:<%= File.read('ansible/.postgres-password').chomp %>@localhost:15432/sandbox"
+        - "psql <%= PITR::Config::DB.new('config.yml').url %>"

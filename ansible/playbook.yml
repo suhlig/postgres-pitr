@@ -3,11 +3,9 @@
 
   vars:
     - ansible_python_interpreter: /usr/bin/python3
-    - db:
-        name: sandbox
-        user: foobar
-        password: "{{ lookup('password', '.postgres-password') }}"
-        version: '11'
+
+  vars_files:
+    - ../config.yml
 
   handlers:
     - name: PostgreSQL Restarted

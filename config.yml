@@ -1,0 +1,11 @@
+db:
+  version: '11'
+  port: 15432
+  name: sandbox
+  user: foobar
+  password: "{{ lookup('password', '.postgres-password') }}"
+  # The following values are optional:
+  # host: localhost
+  # params:
+  #   sslmode: verify-full
+  #   connect_timeout: 10

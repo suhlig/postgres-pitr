@@ -1,16 +1,20 @@
 package postgres_pitr_test
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"strings"
 
 	_ "github.com/lib/pq"
+	"github.com/mikkeloscar/sshconfig"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"golang.org/x/crypto/ssh"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -73,7 +77,7 @@ func (cfg Config) DatabaseURL() (string, error) {
 	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s", cfg.DB.User, password, cfg.DB.Host, cfg.DB.Port, cfg.DB.Name), nil
 }
 
-func runCommand(args ...string) (string, string, error) {
+func run(args ...string) (string, string, error) {
 	cmd := exec.Command(args[0], args[1:]...)
 
 	var stderr string
@@ -89,14 +93,63 @@ func runCommand(args ...string) (string, string, error) {
 	return string(out), stderr, err
 }
 
-func vagrantSSH(command string, args ...interface{}) (string, string, error) {
-	commands := []string{"vagrant", "ssh", "-c", fmt.Sprintf(command, args...)}
-	return runCommand(commands...)
+type VagrantSSH struct {
+	Host sshconfig.SSHHost
+}
+
+func NewVagrantSSH(host sshconfig.SSHHost) (*VagrantSSH, error) {
+	vagrant := &VagrantSSH{Host: host}
+	return vagrant, nil
+}
+
+func (vagrant *VagrantSSH) Run(command string, args ...interface{}) (string, string, error) {
+	privateKey, err := ioutil.ReadFile(vagrant.Host.IdentityFile)
+
+	if err != nil {
+		return "", "", err
+	}
+
+	key, err := ssh.ParsePrivateKey(privateKey)
+	if err != nil {
+		return "", "", err
+	}
+
+	config := &ssh.ClientConfig{
+		User:            vagrant.Host.User,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Auth: []ssh.AuthMethod{
+			ssh.PublicKeys(key),
+		},
+	}
+
+	addr := fmt.Sprintf("%s:%d", vagrant.Host.HostName, vagrant.Host.Port)
+	client, err := ssh.Dial("tcp", addr, config)
+
+	if err != nil {
+		return "", "", err
+	}
+
+	session, err := client.NewSession()
+
+	if err != nil {
+		return "", "", err
+	}
+
+	defer session.Close()
+
+	var stdoutBuf, stderrBuf bytes.Buffer
+	session.Stdout = &stdoutBuf
+	session.Stderr = &stderrBuf
+
+	err = session.Run(fmt.Sprintf(command, args...))
+
+	return stdoutBuf.String(), stderrBuf.String(), err
 }
 
 var _ = Describe("pgBackRest", func() {
 	var db *sql.DB
 	var config Config
+	var vagrant *VagrantSSH
 	var err error
 
 	BeforeEach(func() {
@@ -105,6 +158,26 @@ var _ = Describe("pgBackRest", func() {
 
 		url, err := config.DatabaseURL()
 		Expect(err).NotTo(HaveOccurred())
+
+		// TODO START Move this to a proper type
+		sshConfigString, _, err := run("vagrant", "ssh-config")
+		Expect(sshConfigString).To(ContainSubstring("default"))
+		Expect(err).NotTo(HaveOccurred())
+
+		tmpfile, err := ioutil.TempFile("", "vagrant-ssh-config")
+		Expect(err).NotTo(HaveOccurred())
+		defer os.Remove(tmpfile.Name())
+
+		_, err = tmpfile.Write([]byte(sshConfigString))
+		Expect(err).NotTo(HaveOccurred())
+		err = tmpfile.Close()
+		Expect(err).NotTo(HaveOccurred())
+
+		hosts, err := sshconfig.ParseSSHConfig(tmpfile.Name())
+		Expect(len(hosts)).To(BeNumerically("==", 1), "Require exactly one host, but found %d", len(hosts))
+
+		vagrant, err = NewVagrantSSH(*hosts[0])
+		// TODO END Move this to a proper type
 
 		db, err = sql.Open("postgres", url)
 		Expect(err).NotTo(HaveOccurred())
@@ -141,26 +214,25 @@ var _ = Describe("pgBackRest", func() {
 	})
 
 	It("connects using SSH", func() {
-		stdout, stderr, err := vagrantSSH("id")
+		stdout, stderr, err := vagrant.Run("id")
 		Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
 		Expect(stdout).To(ContainSubstring("vagrant"))
 	})
 
 	It("can run commands with args via SSH", func() {
-		stdout, stderr, err := vagrantSSH("ls -l")
+		stdout, stderr, err := vagrant.Run("ls -l")
 		Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
 		Expect(stdout).To(ContainSubstring("total"))
 	})
 
-
 	Context("A backup exists", func() {
 		BeforeEach(func() {
-			stdout, stderr, err := vagrantSSH("sudo -u postgres pgbackrest --stanza=%s backup", config.PgBackRest.Stanza)
+			stdout, stderr, err := vagrant.Run("sudo -u postgres pgbackrest --stanza=%s backup", config.PgBackRest.Stanza)
 			Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
 		})
 
 		It("lists the backup", func() {
-			stdout, stderr, err := vagrantSSH("sudo -u postgres pgbackrest info --stanza=%s --output=json", config.PgBackRest.Stanza)
+			stdout, stderr, err := vagrant.Run("sudo -u postgres pgbackrest info --stanza=%s --output=json", config.PgBackRest.Stanza)
 			Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
 
 			infos := make([]Info, 0)
@@ -174,14 +246,14 @@ var _ = Describe("pgBackRest", func() {
 			Expect(info.Status.Message).To(Equal("ok"))
 		})
 
-		When("the pg_control file is lost", func() {
-			XIt("successfully restores the cluster", func() {
+		XWhen("the pg_control file is lost", func() {
+			It("successfully restores the cluster", func() {
 
 			})
 		})
 
-		When("important data was deleted", func() {
-			XIt("can be restored to the state at the given point in time", func() {
+		XWhen("important data was deleted", func() {
+			It("can be restored to the state at the given point in time", func() {
 				// TODO https://pgbackrest.org/user-guide.html#pitr
 			})
 		})

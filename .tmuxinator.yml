@@ -17,7 +17,7 @@ windows:
         -
   - vm:
       panes:
-        - "fswatch -r ansible/playbook.yml | xargs -I {} vagrant provision"
+        - "fswatch -r ansible/**/*.yml | xargs -I {} vagrant provision"
         - vagrant ssh
   - db:
       panes:

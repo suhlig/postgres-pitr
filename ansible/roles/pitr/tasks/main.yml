@@ -12,7 +12,7 @@
 
 - name: Archiving is configured
   lineinfile:
-    path: "/etc/postgresql/{{ db.version }}/main/postgresql.conf"
+    path: "/etc/postgresql/{{ db.version }}/{{ db.cluster_name }}/postgresql.conf"
     line: "{{ item }}"
   loop:
     - 'wal_level=archive'

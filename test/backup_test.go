@@ -15,10 +15,13 @@ import (
 
 type Config struct {
 	DB struct {
-		Host string
-		Port int
-		Name string
-		User string
+		Version     string
+		ClusterName string `yaml:"cluster_name"`
+		Host        string
+		Port        int
+		Name        string
+		User        string
+	}
 	}
 }
 
@@ -105,6 +108,19 @@ var _ = Describe("Backup", func() {
 		err = db.QueryRow("SHOW server_version_num;").Scan(&version)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(version).To(BeNumerically(">=", 110000))
+	})
+
+	Context("config file", func() {
+		Context("for the cluster", func() {
+			It("has the configured server version", func() {
+				Expect(config.DB.Version).To(Equal("11"))
+			})
+
+			It("has the configured cluster name", func() {
+				Expect(config.DB.ClusterName).To(Equal("main"))
+			})
+		})
+		})
 	})
 	It("connects using SSH", func() {
 		stdout, stderr, err := RunVagrantSSHCommand("id")

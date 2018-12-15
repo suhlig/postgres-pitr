@@ -1,10 +1,11 @@
 db:
   version: '11'
+  cluster_name: main
   port: 15432
   name: sandbox
   user: foobar
   password: "{{ lookup('password', '.postgres-password') }}"
-  # The following values are optional:
+  # The following values are optional or have defaults:
   # host: localhost
   # params:
   #   sslmode: verify-full

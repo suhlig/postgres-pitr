@@ -54,7 +54,7 @@
 
 - name: Allow authenticated connections from 10.0.0.0
   lineinfile:
-    path: "/etc/postgresql/{{ db.version }}/main/pg_hba.conf"
+    path: "/etc/postgresql/{{ db.version }}/{{ db.cluster_name }}/pg_hba.conf"
     regexp: '^host all all 10.0.0.0'
     line: "host all all 10.0.0.0/8 md5"
   notify:
@@ -63,7 +63,7 @@
 
 - name: Listen on all interfaces
   lineinfile:
-    path: "/etc/postgresql/{{ db.version }}/main/postgresql.conf"
+    path: "/etc/postgresql/{{ db.version }}/{{ db.cluster_name }}/postgresql.conf"
     regexp: '^listen_addresses'
     line: "listen_addresses = '*'"
   notify:

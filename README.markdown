@@ -35,5 +35,6 @@ $ ginkgo watch test
 
 # References
 
-* [anishnath](https://github.com/anishnath/postgres)
+* [anishnath](https://github.com/anishnath/postgres)'s manual approach
 * [Apcelent Tech Blog](https://blog.apcelent.com/using-ansible-to-set-up-postgresql.html)
+* Federico Campoli's [Ansible roles](https://github.com/the4thdoctor/dynamic_duo/blob/04_pgbackrest/roles/rollback/tasks/rollback_ssh.yml)

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io/ioutil"
+	"os/exec"
 	"strings"
 
 	_ "github.com/lib/pq"
@@ -47,7 +48,7 @@ func (cfg Config) Password() (string, error) {
 	return strings.TrimSuffix(string(password), "\n"), nil
 }
 
-func (cfg Config) URL() (string, error) {
+func (cfg Config) DatabaseURL() (string, error) {
 	password, err := cfg.Password()
 
 	if err != nil {
@@ -57,15 +58,37 @@ func (cfg Config) URL() (string, error) {
 	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s", cfg.DB.User, password, cfg.DB.Host, cfg.DB.Port, cfg.DB.Name), nil
 }
 
+func RunCommand(args ...string) (string, string, error) {
+	cmd := exec.Command(args[0], args[1:]...)
+
+	var stderr string
+
+	out, err := cmd.Output()
+
+	if err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			stderr = string(exitError.Stderr)
+		}
+	}
+
+	return string(out), stderr, err
+}
+
+func RunVagrantSSHCommand(args ...string) (string, string, error) {
+	baseCommands := []string{"vagrant", "ssh", "-c"}
+	return RunCommand(append(baseCommands, args...)...)
+}
+
 var _ = Describe("Backup", func() {
 	var db *sql.DB
+	var config Config
 	var err error
 
 	BeforeEach(func() {
-		cfg, err := NewConfig("../config.yml")
+		config, err = NewConfig("../config.yml")
 		Expect(err).NotTo(HaveOccurred())
 
-		url, err := cfg.URL()
+		url, err := config.DatabaseURL()
 		Expect(err).NotTo(HaveOccurred())
 
 		db, err = sql.Open("postgres", url)
@@ -83,4 +106,10 @@ var _ = Describe("Backup", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(version).To(BeNumerically(">=", 110000))
 	})
+	It("connects using SSH", func() {
+		stdout, stderr, err := RunVagrantSSHCommand("id")
+		Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
+		Expect(stdout).To(ContainSubstring("vagrant"))
+	})
+
 })

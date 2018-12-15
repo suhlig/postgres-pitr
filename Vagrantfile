@@ -1,5 +1,7 @@
 require_relative 'lib/pitr/config'
-db = PITR::Config::DB.new('config.yml')
+require 'pathname'
+
+db = PITR::Config::DB.new(Pathname(__dir__) / 'config.yml')
 
 Vagrant.configure('2') do |config|
   config.vm.box = 'ubuntu/bionic64'

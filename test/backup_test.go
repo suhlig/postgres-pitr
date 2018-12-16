@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"os/exec"
 	"strings"
 
@@ -159,25 +158,10 @@ var _ = Describe("pgBackRest", func() {
 		url, err := config.DatabaseURL()
 		Expect(err).NotTo(HaveOccurred())
 
-		// TODO START Move this to a proper type
-		sshConfigString, _, err := run("vagrant", "ssh-config")
-		Expect(sshConfigString).To(ContainSubstring("default"))
-		Expect(err).NotTo(HaveOccurred())
-
-		tmpfile, err := ioutil.TempFile("", "vagrant-ssh-config")
-		Expect(err).NotTo(HaveOccurred())
-		defer os.Remove(tmpfile.Name())
-
-		_, err = tmpfile.Write([]byte(sshConfigString))
-		Expect(err).NotTo(HaveOccurred())
-		err = tmpfile.Close()
-		Expect(err).NotTo(HaveOccurred())
-
-		hosts, err := sshconfig.ParseSSHConfig(tmpfile.Name())
+		hosts, err := sshconfig.ParseSSHConfig(configFileName)
 		Expect(len(hosts)).To(BeNumerically("==", 1), "Require exactly one host, but found %d", len(hosts))
 
 		vagrant, err = NewVagrantSSH(*hosts[0])
-		// TODO END Move this to a proper type
 
 		db, err = sql.Open("postgres", url)
 		Expect(err).NotTo(HaveOccurred())

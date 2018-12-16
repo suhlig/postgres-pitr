@@ -1,7 +1,6 @@
 <% require_relative 'lib/pitr/config' %>
 name: <%= File.basename(Dir.pwd) %>
 
-on_project_first_start: scripts/setup
 on_project_start: vagrant up
 on_project_stop: vagrant halt
 

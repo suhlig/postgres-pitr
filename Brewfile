@@ -1,0 +1,7 @@
+brew "ansible"
+brew "fswatch"
+brew "golang"
+brew "ruby"
+brew "tmux"
+cask "vagrant"
+cask "virtualbox"

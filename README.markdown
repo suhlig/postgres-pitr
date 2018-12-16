@@ -3,6 +3,8 @@
 # TL;DR
 
 ```sh
+$ brew bundle
+$ gem install tmuxinator
 $ go get github.com/suhlig/postgres-pitr
 $ cd $GOPATH/src/github.com/suhlig/postgres-pitr
 $ tmuxinator local

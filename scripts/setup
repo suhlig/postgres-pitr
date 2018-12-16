@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -euo pipefail
+IFS=$'\n\t'
+
+brew bundle
+gem install tmuxinator
+
+go get \
+  github.com/onsi/ginkgo/ginkgo \
+  github.com/onsi/gomega \
+  github.com/lib/pq \
+  gopkg.in/yaml.v2 \
+  github.com/mikkeloscar/sshconfig

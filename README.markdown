@@ -3,8 +3,6 @@
 # TL;DR
 
 ```sh
-$ brew bundle
-$ gem install tmuxinator
 $ go get github.com/suhlig/postgres-pitr
 $ cd $GOPATH/src/github.com/suhlig/postgres-pitr
 $ tmuxinator local
@@ -14,30 +12,25 @@ When done, issue `tmuxinator stop local`, and the VM will be shut down, too.
 
 # Development
 
-Provision if the playbook has changed:
-
-```sh
-$ fswatch -r ansible/playbook.yml | xargs -I {} vagrant provision
-```
-
-# Tests
-
 ## Setup
 
 ```sh
-$ go get \
-     github.com/onsi/ginkgo/ginkgo \
-     github.com/onsi/gomega \
-     github.com/lib/pq \
-     gopkg.in/yaml.v2 \
-     github.com/mikkeloscar/sshconfig
+$ scripts/setup
 ```
 
 ## Iterate
 
-```sh
-$ ginkgo watch
-```
+* Run tests when they changed:
+
+  ```sh
+  $ ginkgo watch
+  ```
+
+* Provision using Ansible when a playbook file has changed:
+
+  ```sh
+  $ fswatch -r ansible/**/* | xargs -I {} vagrant provision
+  ```
 
 # References
 

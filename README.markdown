@@ -4,7 +4,7 @@
 
 ```sh
 $ go get github.com/suhlig/postgres-pitr
-$ cd $GOPATH/github.com/suhlig/postgres-pitr
+$ cd $GOPATH/src/github.com/suhlig/postgres-pitr
 $ tmuxinator local
 ```
 

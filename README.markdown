@@ -3,6 +3,8 @@
 # TL;DR
 
 ```sh
+$ go get github.com/suhlig/postgres-pitr
+$ cd $GOPATH/github.com/suhlig/postgres-pitr
 $ tmuxinator local
 ```
 
@@ -37,6 +39,6 @@ $ ginkgo watch
 
 # References
 
-* [anishnath](https://github.com/anishnath/postgres)'s manual approach
-* [Apcelent Tech Blog](https://blog.apcelent.com/using-ansible-to-set-up-postgresql.html)
-* Federico Campoli's [Ansible roles](https://github.com/the4thdoctor/dynamic_duo/blob/04_pgbackrest/roles/rollback/tasks/rollback_ssh.yml)
+* [anishnath](https://github.com/anishnath/postgres) describes a manual approach
+* The [Apcelent Tech Blog](https://blog.apcelent.com/using-ansible-to-set-up-postgresql.html) lists a few Ansible roles
+* Federico Campoli's [Ansible roles](https://github.com/the4thdoctor/dynamic_duo/blob/04_pgbackrest/roles/rollback/tasks/rollback_ssh.yml) are interesting

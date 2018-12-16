@@ -6,8 +6,6 @@ require 'securerandom'
 module PITR
   module Config
     class DB
-      attr_reader :password
-
       def initialize(path)
         @config = YAML.load_file(path).fetch('db').merge('password' => read_password)
       end
@@ -26,6 +24,10 @@ module PITR
 
       def name
         @config.fetch('name', nil)
+      end
+
+      def password
+        @config.fetch('password', nil)
       end
 
       def params

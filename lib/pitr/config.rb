@@ -1,19 +1,19 @@
 require_relative '../uri/postgres'
 require 'yaml'
+require 'pathname'
+require 'securerandom'
 
 module PITR
   module Config
     class DB
+      attr_reader :password
+
       def initialize(path)
-        @config = YAML.load_file(path)['db']
+        @config = YAML.load_file(path).fetch('db').merge('password' => read_password)
       end
 
       def user
-        @config['user']
-      end
-
-      def password
-        File.read('ansible/.postgres-password').chomp
+        @config.fetch('user', nil)
       end
 
       def host
@@ -25,11 +25,11 @@ module PITR
       end
 
       def name
-        @config['name']
+        @config.fetch('name', nil)
       end
 
       def params
-        @config['params']
+        @config.fetch('params', nil)
       end
 
       def url
@@ -40,6 +40,20 @@ module PITR
           path: '/' + name,
           query: params&.map{|kv| kv.join('=') }&.join('&'),
         )
+      end
+
+      private
+
+      def read_password
+        password_file = Pathname(__dir__) / '../../ansible/.postgres-password'
+
+        if password_file.exist?
+          password_file.read.chomp
+        else
+          SecureRandom.urlsafe_base64(32).tap do |password|
+            password_file.write(password)
+          end
+        end
       end
     end
   end

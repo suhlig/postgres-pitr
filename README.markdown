@@ -24,13 +24,15 @@ $ fswatch -r ansible/playbook.yml | xargs -I {} vagrant provision
 $ go get \
      github.com/onsi/ginkgo/ginkgo \
      github.com/onsi/gomega \
-     github.com/lib/pq
+     github.com/lib/pq \
+     gopkg.in/yaml.v2 \
+     github.com/mikkeloscar/sshconfig
 ```
 
 ## Iterate
 
 ```sh
-$ ginkgo watch test
+$ ginkgo watch
 ```
 
 # References

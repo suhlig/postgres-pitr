@@ -1,19 +1,17 @@
 package postgres_pitr_test
 
 import (
-	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os/exec"
 	"strings"
 
 	_ "github.com/lib/pq"
 	"github.com/mikkeloscar/sshconfig"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"golang.org/x/crypto/ssh"
+	"github.com/suhlig/postgres-pitr/vagrant"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -57,7 +55,7 @@ func NewConfig(path string) (Config, error) {
 }
 
 func (cfg Config) Password() (string, error) {
-	password, err := ioutil.ReadFile("../ansible/.postgres-password")
+	password, err := ioutil.ReadFile("ansible/.postgres-password")
 
 	if err != nil {
 		return "", err
@@ -76,83 +74,14 @@ func (cfg Config) DatabaseURL() (string, error) {
 	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s", cfg.DB.User, password, cfg.DB.Host, cfg.DB.Port, cfg.DB.Name), nil
 }
 
-func run(args ...string) (string, string, error) {
-	cmd := exec.Command(args[0], args[1:]...)
-
-	var stderr string
-
-	out, err := cmd.Output()
-
-	if err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
-			stderr = string(exitError.Stderr)
-		}
-	}
-
-	return string(out), stderr, err
-}
-
-type VagrantSSH struct {
-	Host sshconfig.SSHHost
-}
-
-func NewVagrantSSH(host sshconfig.SSHHost) (*VagrantSSH, error) {
-	vagrant := &VagrantSSH{Host: host}
-	return vagrant, nil
-}
-
-func (vagrant *VagrantSSH) Run(command string, args ...interface{}) (string, string, error) {
-	privateKey, err := ioutil.ReadFile(vagrant.Host.IdentityFile)
-
-	if err != nil {
-		return "", "", err
-	}
-
-	key, err := ssh.ParsePrivateKey(privateKey)
-	if err != nil {
-		return "", "", err
-	}
-
-	config := &ssh.ClientConfig{
-		User:            vagrant.Host.User,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Auth: []ssh.AuthMethod{
-			ssh.PublicKeys(key),
-		},
-	}
-
-	addr := fmt.Sprintf("%s:%d", vagrant.Host.HostName, vagrant.Host.Port)
-	client, err := ssh.Dial("tcp", addr, config)
-
-	if err != nil {
-		return "", "", err
-	}
-
-	session, err := client.NewSession()
-
-	if err != nil {
-		return "", "", err
-	}
-
-	defer session.Close()
-
-	var stdoutBuf, stderrBuf bytes.Buffer
-	session.Stdout = &stdoutBuf
-	session.Stderr = &stderrBuf
-
-	err = session.Run(fmt.Sprintf(command, args...))
-
-	return stdoutBuf.String(), stderrBuf.String(), err
-}
-
 var _ = Describe("pgBackRest", func() {
 	var db *sql.DB
 	var config Config
-	var vagrant *VagrantSSH
+	var vagrant *vagrant.VagrantSSH
 	var err error
 
 	BeforeEach(func() {
-		config, err = NewConfig("../config.yml")
+		config, err = NewConfig("config.yml")
 		Expect(err).NotTo(HaveOccurred())
 
 		url, err := config.DatabaseURL()
@@ -161,7 +90,7 @@ var _ = Describe("pgBackRest", func() {
 		hosts, err := sshconfig.ParseSSHConfig(configFileName)
 		Expect(len(hosts)).To(BeNumerically("==", 1), "Require exactly one host, but found %d", len(hosts))
 
-		vagrant, err = NewVagrantSSH(*hosts[0])
+		vagrant, err = vagrant.New(*hosts[0])
 
 		db, err = sql.Open("postgres", url)
 		Expect(err).NotTo(HaveOccurred())

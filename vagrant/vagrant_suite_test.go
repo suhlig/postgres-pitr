@@ -1,25 +1,24 @@
-package postgres_pitr_test
+package vagrant_test
 
 import (
 	"testing"
 
 	"github.com/mikkeloscar/sshconfig"
-	"github.com/suhlig/postgres-pitr/vagrant"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/suhlig/postgres-pitr/vagrant"
 )
 
-var host sshconfig.SSHHost
+var hosts []*sshconfig.SSHHost
 
 var _ = BeforeSuite(func() {
-	hosts, err := vagrant.Hosts()
+	var err error
+	hosts, err = vagrant.Hosts()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(len(hosts)).To(BeNumerically("==", 1), "Expect exactly one host, but found %d", len(hosts))
-	host = *hosts[0]
 })
 
-func TestPostgresPitr(t *testing.T) {
+func TestVagrant(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "PostgreSQL PITR Suite")
+	RunSpecs(t, "Vagrant Suite")
 }

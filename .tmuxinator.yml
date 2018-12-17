@@ -7,7 +7,7 @@ on_project_stop: vagrant halt
 windows:
   - test:
       panes:
-        - ginkgo watch
+        - ginkgo watch -v -r
         -
   - vm:
       panes:

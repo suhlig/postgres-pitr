@@ -24,7 +24,7 @@ $ scripts/setup
 * Run tests when they changed:
 
   ```sh
-  $ ginkgo watch
+  $ ginkgo watch -v -r
   ```
 
 * Provision using Ansible when a playbook file has changed:

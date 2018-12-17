@@ -4,7 +4,6 @@ import (
 	"database/sql"
 
 	_ "github.com/lib/pq"
-	"github.com/mikkeloscar/sshconfig"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/suhlig/postgres-pitr/cluster"
@@ -69,23 +68,8 @@ var _ = Describe("a VM with PostgreSQL", func() {
 		var ssh *sshrunner.Runner
 
 		BeforeEach(func() {
-			hosts, err := sshconfig.ParseSSHConfig(configFileName)
-			Expect(len(hosts)).To(BeNumerically("==", 1), "Require exactly one host, but found %d", len(hosts))
-
-			ssh, err = ssh.New(*hosts[0])
+			ssh, err = ssh.New(host)
 			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("can connect using SSH", func() {
-			stdout, stderr, err := ssh.Run("id")
-			Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
-			Expect(stdout).To(ContainSubstring("vagrant"))
-		})
-
-		It("can run commands with args via SSH", func() {
-			stdout, stderr, err := ssh.Run("ls -l")
-			Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
-			Expect(stdout).To(ContainSubstring("total"))
 		})
 
 		Context("A backup exists", func() {

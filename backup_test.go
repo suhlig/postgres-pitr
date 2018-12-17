@@ -2,86 +2,24 @@ package postgres_pitr_test
 
 import (
 	"database/sql"
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"strings"
 
 	_ "github.com/lib/pq"
 	"github.com/mikkeloscar/sshconfig"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/suhlig/postgres-pitr/config"
+	"github.com/suhlig/postgres-pitr/pgbackrest"
 	"github.com/suhlig/postgres-pitr/vagrant"
-	yaml "gopkg.in/yaml.v2"
 )
 
-type Config struct {
-	DB struct {
-		Version     string
-		ClusterName string `yaml:"cluster_name"`
-		Host        string
-		Port        int
-		Name        string
-		User        string
-	}
-
-	PgBackRest struct {
-		Stanza string
-	}
-}
-
-type Info struct {
-	Name   string
-	Status struct {
-		Code    int
-		Message string
-	}
-}
-
-func NewConfig(path string) (Config, error) {
-	cfg := Config{}
-	cfg.DB.Host = "localhost"
-	cfg.DB.Port = 5432
-
-	yamlFile, err := ioutil.ReadFile(path)
-
-	if err != nil {
-		return cfg, err
-	}
-
-	err = yaml.Unmarshal(yamlFile, &cfg)
-
-	return cfg, err
-}
-
-func (cfg Config) Password() (string, error) {
-	password, err := ioutil.ReadFile("ansible/.postgres-password")
-
-	if err != nil {
-		return "", err
-	}
-
-	return strings.TrimSuffix(string(password), "\n"), nil
-}
-
-func (cfg Config) DatabaseURL() (string, error) {
-	password, err := cfg.Password()
-
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s", cfg.DB.User, password, cfg.DB.Host, cfg.DB.Port, cfg.DB.Name), nil
-}
-
 var _ = Describe("VM with pgBackRest", func() {
-	var config Config
+	var config config.Config
 	var vagrant *vagrant.VagrantSSH
 	var err error
 	var url string
 
 	BeforeEach(func() {
-		config, err = NewConfig("config.yml")
+		config, err = config.New("config.yml")
 		Expect(err).NotTo(HaveOccurred())
 
 		url, err = config.DatabaseURL()
@@ -158,9 +96,8 @@ var _ = Describe("VM with pgBackRest", func() {
 				stdout, stderr, err := vagrant.Run("sudo -u postgres pgbackrest info --stanza=%s --output=json", config.PgBackRest.Stanza)
 				Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
 
-				infos := make([]Info, 0)
-				err = json.Unmarshal([]byte(stdout), &infos)
-				Expect(err).ToNot(HaveOccurred(), "stdout was: '%v'", stdout)
+				infos, err := pgbackrest.ParseInfo(stdout)
+				Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
 
 				Expect(infos).To(HaveLen(1))
 				info := infos[0]

@@ -10,27 +10,26 @@ import (
 	"github.com/suhlig/postgres-pitr/cluster"
 	"github.com/suhlig/postgres-pitr/config"
 	"github.com/suhlig/postgres-pitr/pgbackrest"
-	"github.com/suhlig/postgres-pitr/vagrant"
+	"github.com/suhlig/postgres-pitr/sshrunner"
 )
 
-var _ = Describe("VM with pgBackRest", func() {
+var _ = Describe("a VM with PostgreSQL", func() {
 	var config config.Config
-	var vagrant *vagrant.VagrantSSH
 	var err error
-	var url string
 
 	BeforeEach(func() {
 		config, err = config.New("config.yml")
 		Expect(err).NotTo(HaveOccurred())
-
-		url, err = config.DatabaseURL()
-		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Context("Database connection established", func() {
+		var url string
 		var db *sql.DB
 
 		BeforeEach(func() {
+			url, err = config.DatabaseURL()
+			Expect(err).NotTo(HaveOccurred())
+
 			db, err = sql.Open("postgres", url)
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -48,41 +47,43 @@ var _ = Describe("VM with pgBackRest", func() {
 		})
 	})
 
-	Context("Config file exists", func() {
+	Context("Configuration file contains an entry", func() {
 		Context("for the cluster", func() {
 			It("has the configured server version", func() {
-				Expect(config.DB.Version).To(Equal("11"))
+				Expect(config.DB.Version).ToNot(BeEmpty())
 			})
 
 			It("has the configured cluster name", func() {
-				Expect(config.DB.ClusterName).To(Equal("main"))
+				Expect(config.DB.ClusterName).ToNot(BeEmpty())
 			})
 		})
 
 		Context("for pgbackrest", func() {
 			It("has the configured stanza", func() {
-				Expect(config.PgBackRest.Stanza).To(Equal("pitr"))
+				Expect(config.PgBackRest.Stanza).ToNot(BeEmpty())
 			})
 		})
 	})
 
-	Context("VM has SSH config", func() {
+	Context("with SSH config", func() {
+		var ssh *sshrunner.Runner
+
 		BeforeEach(func() {
 			hosts, err := sshconfig.ParseSSHConfig(configFileName)
 			Expect(len(hosts)).To(BeNumerically("==", 1), "Require exactly one host, but found %d", len(hosts))
 
-			vagrant, err = vagrant.New(*hosts[0])
+			ssh, err = ssh.New(*hosts[0])
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("can connect using SSH", func() {
-			stdout, stderr, err := vagrant.Run("id")
+			stdout, stderr, err := ssh.Run("id")
 			Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
 			Expect(stdout).To(ContainSubstring("vagrant"))
 		})
 
 		It("can run commands with args via SSH", func() {
-			stdout, stderr, err := vagrant.Run("ls -l")
+			stdout, stderr, err := ssh.Run("ls -l")
 			Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
 			Expect(stdout).To(ContainSubstring("total"))
 		})
@@ -91,14 +92,14 @@ var _ = Describe("VM with pgBackRest", func() {
 			var pgbr pgbackrest.Controller
 
 			BeforeEach(func() {
-				pgbr, err = pgbackrest.NewController(vagrant)
+				pgbr, err = pgbackrest.NewController(ssh)
 				Expect(err).NotTo(HaveOccurred())
 
 				err = pgbr.Backup(config.PgBackRest.Stanza)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
-			It("lists the backup", func() {
+			It("has a backup", func() {
 				infos, err := pgbr.Info(config.PgBackRest.Stanza)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -110,31 +111,31 @@ var _ = Describe("VM with pgBackRest", func() {
 			})
 
 			When("an important file is lost", func() {
-				var clstr cluster.Controller
+				var clustr cluster.Controller
 
 				BeforeEach(func() {
-					clstr, err = cluster.NewController(vagrant)
+					clustr, err = cluster.NewController(ssh)
 					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("restores the cluster", func() {
 					By("stopping the cluster", func() {
-						err = clstr.Stop(config.DB.Version, "main")
+						err = clustr.Stop(config.DB.Version, config.DB.ClusterName)
 						Expect(err).NotTo(HaveOccurred())
 					})
 
 					By("deleting the pg_control file", func() {
-						stdout, stderr, err := vagrant.Run("sudo -u postgres rm /var/lib/postgresql/%s/main/global/pg_control", config.DB.Version)
+						stdout, stderr, err := ssh.Run("sudo -u postgres rm /var/lib/postgresql/%s/%s/global/pg_control", config.DB.Version, config.DB.ClusterName)
 						Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
 					})
 
 					By("attempting to start the cluster again", func() {
-						err = clstr.Start(config.DB.Version, "main")
+						err = clustr.Start(config.DB.Version, config.DB.ClusterName)
 						Expect(err).To(HaveOccurred())
 					})
 
 					By("removing all files from the PostgreSQL data directory", func() {
-						stdout, stderr, err := vagrant.Run("sudo -u postgres find /var/lib/postgresql/%s/main -mindepth 1 -delete", config.DB.Version)
+						stdout, stderr, err := ssh.Run("sudo -u postgres find /var/lib/postgresql/%s/%s -mindepth 1 -delete", config.DB.Version, config.DB.ClusterName)
 						Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
 					})
 
@@ -144,7 +145,7 @@ var _ = Describe("VM with pgBackRest", func() {
 					})
 
 					By("starting the cluster", func() {
-						err = clstr.Start(config.DB.Version, "main")
+						err = clustr.Start(config.DB.Version, config.DB.ClusterName)
 						Expect(err).NotTo(HaveOccurred())
 					})
 				})

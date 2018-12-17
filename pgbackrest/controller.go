@@ -11,14 +11,17 @@ type Info struct {
 	}
 }
 
+// Controller provides a way to control pgbackrest
 type Controller struct {
 	Runner Runner
 }
 
+// Runner executes commands via SSH
 type Runner interface {
 	Run(command string, args ...interface{}) (string, string, error)
 }
 
+// NewController creates a new controller
 func NewController(runner Runner) (Controller, error) {
 	controller := Controller{}
 	controller.Runner = runner
@@ -26,6 +29,7 @@ func NewController(runner Runner) (Controller, error) {
 	return controller, nil
 }
 
+// Info provides a summary of backups for the given stanza
 func (ctl Controller) Info(stanza string) ([]Info, error) {
 	stdout, stderr, err := ctl.Runner.Run("sudo -u postgres pgbackrest info --stanza=%s --output=json", stanza)
 
@@ -36,6 +40,7 @@ func (ctl Controller) Info(stanza string) ([]Info, error) {
 	return parseInfo(stdout)
 }
 
+// Creates a new backup for the given stanza
 func (ctl Controller) Backup(stanza string) error {
 	stdout, stderr, err := ctl.Runner.Run("sudo -u postgres pgbackrest --stanza=%s backup", stanza)
 
@@ -46,6 +51,7 @@ func (ctl Controller) Backup(stanza string) error {
 	return nil
 }
 
+// Restores a backup for the given stanza
 func (ctl Controller) Restore(stanza string) error {
 	stdout, stderr, err := ctl.Runner.Run("sudo -u postgres pgbackrest --stanza=%s restore", stanza)
 

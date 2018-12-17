@@ -1,4 +1,4 @@
-package vagrant
+package sshrunner
 
 import (
 	"bytes"
@@ -9,17 +9,20 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-type VagrantSSH struct {
+// Runner executes commands via SSH
+type Runner struct {
 	Host sshconfig.SSHHost
 }
 
-func (vagrant *VagrantSSH) New(host sshconfig.SSHHost) (*VagrantSSH, error) {
-	v := &VagrantSSH{Host: host}
+// New creates a new Runner
+func (runner *Runner) New(host sshconfig.SSHHost) (*Runner, error) {
+	v := &Runner{Host: host}
 	return v, nil
 }
 
-func (vagrant *VagrantSSH) Run(command string, args ...interface{}) (string, string, error) {
-	privateKey, err := ioutil.ReadFile(vagrant.Host.IdentityFile)
+// Run executes the given command via SSH, with args interpolated.
+func (runner *Runner) Run(command string, args ...interface{}) (string, string, error) {
+	privateKey, err := ioutil.ReadFile(runner.Host.IdentityFile)
 
 	if err != nil {
 		return "", "", err
@@ -31,14 +34,14 @@ func (vagrant *VagrantSSH) Run(command string, args ...interface{}) (string, str
 	}
 
 	config := &ssh.ClientConfig{
-		User:            vagrant.Host.User,
+		User:            runner.Host.User,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(key),
 		},
 	}
 
-	addr := fmt.Sprintf("%s:%d", vagrant.Host.HostName, vagrant.Host.Port)
+	addr := fmt.Sprintf("%s:%d", runner.Host.HostName, runner.Host.Port)
 	client, err := ssh.Dial("tcp", addr, config)
 
 	if err != nil {

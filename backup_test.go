@@ -7,6 +7,7 @@ import (
 	"github.com/mikkeloscar/sshconfig"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/suhlig/postgres-pitr/cluster"
 	"github.com/suhlig/postgres-pitr/config"
 	"github.com/suhlig/postgres-pitr/pgbackrest"
 	"github.com/suhlig/postgres-pitr/vagrant"
@@ -87,17 +88,19 @@ var _ = Describe("VM with pgBackRest", func() {
 		})
 
 		Context("A backup exists", func() {
+			var pgbr pgbackrest.Controller
+
 			BeforeEach(func() {
-				stdout, stderr, err := vagrant.Run("sudo -u postgres pgbackrest --stanza=%s backup", config.PgBackRest.Stanza)
-				Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
+				pgbr, err = pgbackrest.NewController(vagrant)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = pgbr.Backup(config.PgBackRest.Stanza)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("lists the backup", func() {
-				stdout, stderr, err := vagrant.Run("sudo -u postgres pgbackrest info --stanza=%s --output=json", config.PgBackRest.Stanza)
-				Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
-
-				infos, err := pgbackrest.ParseInfo(stdout)
-				Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
+				infos, err := pgbr.Info(config.PgBackRest.Stanza)
+				Expect(err).NotTo(HaveOccurred())
 
 				Expect(infos).To(HaveLen(1))
 				info := infos[0]
@@ -106,9 +109,44 @@ var _ = Describe("VM with pgBackRest", func() {
 				Expect(info.Status.Message).To(Equal("ok"))
 			})
 
-			XWhen("the pg_control file is lost", func() {
-				It("successfully restores the cluster", func() {
+			When("an important file is lost", func() {
+				var clstr cluster.Controller
 
+				BeforeEach(func() {
+					clstr, err = cluster.NewController(vagrant)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("restores the cluster", func() {
+					By("stopping the cluster", func() {
+						err = clstr.Stop(config.DB.Version, "main")
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					By("deleting the pg_control file", func() {
+						stdout, stderr, err := vagrant.Run("sudo -u postgres rm /var/lib/postgresql/%s/main/global/pg_control", config.DB.Version)
+						Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
+					})
+
+					By("attempting to start the cluster again", func() {
+						err = clstr.Start(config.DB.Version, "main")
+						Expect(err).To(HaveOccurred())
+					})
+
+					By("removing all files from the PostgreSQL data directory", func() {
+						stdout, stderr, err := vagrant.Run("sudo -u postgres find /var/lib/postgresql/%s/main -mindepth 1 -delete", config.DB.Version)
+						Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
+					})
+
+					By("restoring the backup", func() {
+						err = pgbr.Restore(config.PgBackRest.Stanza)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					By("starting the cluster", func() {
+						err = clstr.Start(config.DB.Version, "main")
+						Expect(err).NotTo(HaveOccurred())
+					})
 				})
 			})
 
@@ -117,30 +155,6 @@ var _ = Describe("VM with pgBackRest", func() {
 					// TODO https://pgbackrest.org/user-guide.html#pitr
 				})
 			})
-
-			/*
-				// Verify cluster status:
-				sudo pg_ctlcluster 11 main status
-
-				// Stop the main cluster and delete the pg_control file
-				sudo pg_ctlcluster 9.4 main stop
-				sudo -u postgres rm /var/lib/postgresql/9.4/main/global/pg_control
-
-				// Verify that starting the cluster without this important file will result in an error
-				sudo pg_ctlcluster 9.4 main start
-
-				// ensure cluster is stopped
-				sudo pg_ctlcluster 11 main status
-
-				// remove all files from the PostgreSQL data directory
-				sudo -u postgres find /var/lib/postgresql/9.4/main -mindepth 1 -delete
-
-				// Restore the main cluster and start PostgreSQL
-				sudo -u postgres pgbackrest --stanza=pitr restore
-				sudo pg_ctlcluster 9.4 main start
-
-				// Verify that the cluster is up
-			*/
 		})
 	})
 })

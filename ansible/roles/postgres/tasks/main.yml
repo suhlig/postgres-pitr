@@ -1,16 +1,16 @@
-- name: PostgreSQL repo key is available
+- name: Repo key is available
   apt_key:
     url: https://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc
     state: present
 
-- name: PostgreSQL repository is present
+- name: Repository is present
   apt_repository:
     repo: 'deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main'
     state: present
     filename: pgdg
     update_cache: true
 
-- name: PostgreSQL is installed
+- name: Program is installed
   apt:
     name:
       - "postgresql-{{ db.version }}"
@@ -20,7 +20,7 @@
     state: present
   tags: packages
 
-- name: PostgreSQL is running
+- name: Server is running
   service:
     name: postgresql
     state: started

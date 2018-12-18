@@ -65,11 +65,10 @@ func (ctl Controller) Restore(stanza string) error {
 
 // RestoreTo a specific point in time
 func (ctl Controller) RestoreTo(stanza string, pointInTime time.Time) error {
-	pointInTimeRFC := fmt.Sprintf((pointInTime.Format(time.RFC3339)))
 	stdout, stderr, err := ctl.Runner.Run(
 		"sudo -u postgres pgbackrest --stanza=%s --delta --type=time \"--target=%s\" restore",
 		stanza,
-		pointInTimeRFC,
+		fmt.Sprintf((pointInTime.Format(time.RFC3339))),
 	)
 
 	if err != nil {

@@ -13,7 +13,7 @@ type Controller struct {
 	Name    string
 }
 
-// NewController creates a new controller
+// NewController creates a new controller for the cluster with the given version and name
 func NewController(runner pitr.Runner, version, name string) (Controller, error) {
 	controller := Controller{}
 	controller.Runner = runner
@@ -23,7 +23,7 @@ func NewController(runner pitr.Runner, version, name string) (Controller, error)
 	return controller, nil
 }
 
-// Start starts the cluster with the given version and name
+// Start starts the cluster
 func (ctl Controller) Start() error {
 	stdout, stderr, err := ctl.Runner.Run("sudo pg_ctlcluster %s %s start", ctl.Version, ctl.Name)
 
@@ -34,7 +34,7 @@ func (ctl Controller) Start() error {
 	return nil
 }
 
-// Stop stops the cluster with the given version and name
+// Stop stops the cluster
 func (ctl Controller) Stop() error {
 	stdout, stderr, err := ctl.Runner.Run("sudo pg_ctlcluster %s %s stop", ctl.Version, ctl.Name)
 
@@ -45,7 +45,7 @@ func (ctl Controller) Stop() error {
 	return nil
 }
 
-// Clear removes all files of the cluster with the given version and name
+// Clear removes all files of the cluster
 func (ctl Controller) Clear() error {
 	stdout, stderr, err := ctl.Runner.Run("sudo -u postgres find /var/lib/postgresql/%s/%s -mindepth 1 -delete", ctl.Version, ctl.Name)
 

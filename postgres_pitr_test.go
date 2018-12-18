@@ -57,7 +57,7 @@ var _ = Describe("a VM with PostgreSQL", func() {
 			ssh, err = ssh.New(host)
 			Expect(err).NotTo(HaveOccurred())
 
-			clustr, err = cluster.NewController(ssh)
+			clustr, err = cluster.NewController(ssh, config.DB.Version, config.DB.ClusterName)
 			Expect(err).NotTo(HaveOccurred())
 
 			pgbr, err = pgbackrest.NewController(ssh)
@@ -66,15 +66,15 @@ var _ = Describe("a VM with PostgreSQL", func() {
 
 		// Use this to quickly restore from a backup
 		// FIt("DEBUG Restores a backup", func() {
-		// 	clustr.Stop(config.DB.Version, config.DB.ClusterName)
+		// 	clustr.Stop()
 
-		// 	err = clustr.Clear(config.DB.Version, config.DB.ClusterName)
+		// 	err = clustr.Clear()
 		// 	Expect(err).NotTo(HaveOccurred())
 
 		// 	err = pgbr.Restore(config.PgBackRest.Stanza)
 		// 	Expect(err).NotTo(HaveOccurred())
 
-		// 	err = clustr.Start(config.DB.Version, config.DB.ClusterName)
+		// 	err = clustr.Start()
 		// 	Expect(err).NotTo(HaveOccurred())
 		// })
 
@@ -99,7 +99,7 @@ var _ = Describe("a VM with PostgreSQL", func() {
 			When("an important file is lost", func() {
 				It("restores the cluster", func() {
 					By("stopping the cluster", func() {
-						err = clustr.Stop(config.DB.Version, config.DB.ClusterName)
+						err = clustr.Stop()
 						Expect(err).NotTo(HaveOccurred())
 					})
 
@@ -109,12 +109,12 @@ var _ = Describe("a VM with PostgreSQL", func() {
 					})
 
 					By("attempting to start the cluster again", func() {
-						err = clustr.Start(config.DB.Version, config.DB.ClusterName)
+						err = clustr.Start()
 						Expect(err).To(HaveOccurred())
 					})
 
 					By("removing all files from the PostgreSQL data directory", func() {
-						err = clustr.Clear(config.DB.Version, config.DB.ClusterName)
+						err = clustr.Clear()
 						Expect(err).ToNot(HaveOccurred())
 					})
 
@@ -124,7 +124,7 @@ var _ = Describe("a VM with PostgreSQL", func() {
 					})
 
 					By("starting the cluster", func() {
-						err = clustr.Start(config.DB.Version, config.DB.ClusterName)
+						err = clustr.Start()
 						Expect(err).NotTo(HaveOccurred())
 					})
 				})
@@ -180,7 +180,7 @@ var _ = Describe("a VM with PostgreSQL", func() {
 				})
 
 				By(fmt.Sprintf("restoring the cluster to the point in time when it was backed up: %v", backupPointInTime), func() {
-					err = clustr.Stop(config.DB.Version, config.DB.ClusterName)
+					err = clustr.Stop()
 					Expect(err).NotTo(HaveOccurred())
 
 					err = pgbr.RestoreTo(config.PgBackRest.Stanza, backupPointInTime)
@@ -194,7 +194,7 @@ var _ = Describe("a VM with PostgreSQL", func() {
 				})
 
 				By("starting the cluster", func() {
-					err = clustr.Start(config.DB.Version, config.DB.ClusterName)
+					err = clustr.Start()
 					Expect(err).NotTo(HaveOccurred())
 				})
 

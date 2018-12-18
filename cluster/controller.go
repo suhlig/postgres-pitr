@@ -10,20 +10,24 @@ type Runner interface {
 
 // Controller provides a way to control a PostgreSQL cluster
 type Controller struct {
-	Runner Runner
+	Runner  Runner
+	Version string
+	Name    string
 }
 
 // NewController creates a new controller
-func NewController(runner Runner) (Controller, error) {
+func NewController(runner Runner, version, name string) (Controller, error) {
 	controller := Controller{}
 	controller.Runner = runner
+	controller.Version = version
+	controller.Name = name
 
 	return controller, nil
 }
 
 // Start starts the cluster with the given version and name
-func (ctl Controller) Start(version, name string) error {
-	stdout, stderr, err := ctl.Runner.Run("sudo pg_ctlcluster %s %s start", version, name)
+func (ctl Controller) Start() error {
+	stdout, stderr, err := ctl.Runner.Run("sudo pg_ctlcluster %s %s start", ctl.Version, ctl.Name)
 
 	if err != nil {
 		return fmt.Errorf("Error: %v\nstderr:\n%v\nstdout:\n%v\n", err, stdout, stderr)
@@ -33,8 +37,8 @@ func (ctl Controller) Start(version, name string) error {
 }
 
 // Stop stops the cluster with the given version and name
-func (ctl Controller) Stop(version, name string) error {
-	stdout, stderr, err := ctl.Runner.Run("sudo pg_ctlcluster %s %s stop", version, name)
+func (ctl Controller) Stop() error {
+	stdout, stderr, err := ctl.Runner.Run("sudo pg_ctlcluster %s %s stop", ctl.Version, ctl.Name)
 
 	if err != nil {
 		return fmt.Errorf("Error: %v\nstderr:\n%v\nstdout:\n%v\n", err, stdout, stderr)
@@ -44,8 +48,8 @@ func (ctl Controller) Stop(version, name string) error {
 }
 
 // Clear removes all files of the cluster with the given version and name
-func (ctl Controller) Clear(version, name string) error {
-	stdout, stderr, err := ctl.Runner.Run("sudo -u postgres find /var/lib/postgresql/%s/%s -mindepth 1 -delete", version, name)
+func (ctl Controller) Clear() error {
+	stdout, stderr, err := ctl.Runner.Run("sudo -u postgres find /var/lib/postgresql/%s/%s -mindepth 1 -delete", ctl.Version, ctl.Name)
 
 	if err != nil {
 		return fmt.Errorf("Error: %v\nstderr:\n%v\nstdout:\n%v\n", err, stdout, stderr)

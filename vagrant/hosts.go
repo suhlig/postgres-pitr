@@ -8,6 +8,7 @@ import (
 	"github.com/mikkeloscar/sshconfig"
 )
 
+// Hosts provides the SSH configuration of Vagrant VMs
 func Hosts() ([]*sshconfig.SSHHost, error) {
 	stdout, _, err := run("vagrant", "ssh-config")
 	if err != nil {

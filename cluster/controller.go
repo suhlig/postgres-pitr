@@ -2,21 +2,19 @@ package cluster
 
 import (
 	"fmt"
-)
 
-type Runner interface {
-	Run(command string, args ...interface{}) (string, string, error)
-}
+	pitr "github.com/suhlig/postgres-pitr"
+)
 
 // Controller provides a way to control a PostgreSQL cluster
 type Controller struct {
-	Runner  Runner
+	Runner  pitr.Runner
 	Version string
 	Name    string
 }
 
 // NewController creates a new controller
-func NewController(runner Runner, version, name string) (Controller, error) {
+func NewController(runner pitr.Runner, version, name string) (Controller, error) {
 	controller := Controller{}
 	controller.Runner = runner
 	controller.Version = version

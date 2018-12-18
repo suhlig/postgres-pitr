@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	pitr "github.com/suhlig/postgres-pitr"
 )
 
+// Info tells about the backups of a stanza
 type Info struct {
 	Name   string
 	Status struct {
@@ -16,16 +19,11 @@ type Info struct {
 
 // Controller provides a way to control pgbackrest
 type Controller struct {
-	Runner Runner
-}
-
-// Runner executes commands via SSH
-type Runner interface {
-	Run(command string, args ...interface{}) (string, string, error)
+	Runner pitr.Runner
 }
 
 // NewController creates a new controller
-func NewController(runner Runner) (Controller, error) {
+func NewController(runner pitr.Runner) (Controller, error) {
 	controller := Controller{}
 	controller.Runner = runner
 
@@ -43,7 +41,7 @@ func (ctl Controller) Info(stanza string) ([]Info, error) {
 	return parseInfo(stdout)
 }
 
-// Creates a new backup for the given stanza
+// Backup creates a new backup for the given stanza
 func (ctl Controller) Backup(stanza string) error {
 	stdout, stderr, err := ctl.Runner.Run("sudo -u postgres pgbackrest --stanza=%s backup --type=incr", stanza)
 
@@ -54,7 +52,7 @@ func (ctl Controller) Backup(stanza string) error {
 	return nil
 }
 
-// Restores a backup for the given stanza
+// Restore a backup for the given stanza
 func (ctl Controller) Restore(stanza string) error {
 	stdout, stderr, err := ctl.Runner.Run("sudo -u postgres pgbackrest --stanza=%s restore", stanza)
 
@@ -65,7 +63,7 @@ func (ctl Controller) Restore(stanza string) error {
 	return nil
 }
 
-// Restores a backup for the given stanza to a specific point in time
+// RestoreTo a specific point in time
 func (ctl Controller) RestoreTo(stanza string, pointInTime time.Time) error {
 	pointInTimeRFC := fmt.Sprintf((pointInTime.Format(time.RFC3339)))
 	stdout, stderr, err := ctl.Runner.Run(

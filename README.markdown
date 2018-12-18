@@ -1,5 +1,9 @@
 # Spike on Postgres PITR
 
+This is basically an acceptance test implementing the [Point-in-Time Recovery
+](https://pgbackrest.org/user-guide.html#pitr) chapter of the [pgBackRest User Guide
+](https://pgbackrest.org/user-guide.html).
+
 # TL;DR
 
 ```sh
@@ -41,4 +45,8 @@ $ scripts/setup
 
 # TODO
 
-* Extract config reader into separate package
+* Why do we need to `pg_wal_replay_resume()` after point-in-time restore?
+* Fix poor error handling in the controllers
+* Add a VM as [Dedicated Repository Host](https://pgbackrest.org/user-guide.html#repo-host)
+* Proper dependency management for the Go part
+* Test more than the happy path

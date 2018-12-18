@@ -2,6 +2,8 @@ package postgres_pitr_test
 
 import (
 	"database/sql"
+	"fmt"
+	"time"
 
 	_ "github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
@@ -48,24 +50,27 @@ var _ = Describe("a VM with PostgreSQL", func() {
 
 	Context("with SSH config", func() {
 		var ssh *sshrunner.Runner
+		var pgbr pgbackrest.Controller
+		var clustr cluster.Controller
 
 		BeforeEach(func() {
 			ssh, err = ssh.New(host)
 			Expect(err).NotTo(HaveOccurred())
+
+			clustr, err = cluster.NewController(ssh)
+			Expect(err).NotTo(HaveOccurred())
+
+			pgbr, err = pgbackrest.NewController(ssh)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context("A backup exists", func() {
-			var pgbr pgbackrest.Controller
-
 			BeforeEach(func() {
-				pgbr, err = pgbackrest.NewController(ssh)
-				Expect(err).NotTo(HaveOccurred())
-
 				err = pgbr.Backup(config.PgBackRest.Stanza)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
-			It("has a backup", func() {
+			It("has info about the most recent backup", func() {
 				infos, err := pgbr.Info(config.PgBackRest.Stanza)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -76,14 +81,8 @@ var _ = Describe("a VM with PostgreSQL", func() {
 				Expect(info.Status.Message).To(Equal("ok"))
 			})
 
+			// https://pgbackrest.org/user-guide.html#quickstart/perform-restore
 			When("an important file is lost", func() {
-				var clustr cluster.Controller
-
-				BeforeEach(func() {
-					clustr, err = cluster.NewController(ssh)
-					Expect(err).NotTo(HaveOccurred())
-				})
-
 				It("restores the cluster", func() {
 					By("stopping the cluster", func() {
 						err = clustr.Stop(config.DB.Version, config.DB.ClusterName)
@@ -116,12 +115,100 @@ var _ = Describe("a VM with PostgreSQL", func() {
 					})
 				})
 			})
+		})
 
-			XWhen("important data was deleted", func() {
-				It("can be restored to the state at the given point in time", func() {
-					// TODO https://pgbackrest.org/user-guide.html#pitr
+		// https://pgbackrest.org/user-guide.html#pitr
+		Context("important data was deleted", func() {
+			var url string
+			var db *sql.DB
+			var pgbr pgbackrest.Controller
+
+			BeforeEach(func() {
+				url, err = config.DatabaseURL()
+				Expect(err).NotTo(HaveOccurred())
+
+				db, err = sql.Open("postgres", url)
+				Expect(err).NotTo(HaveOccurred())
+
+				pgbr, err = pgbackrest.NewController(ssh)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			AfterEach(func() {
+				_, err := db.Exec("drop table important_table")
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("can be restored to the state at the given point in time", func() {
+				var backupPointInTime time.Time
+
+				By("creating a table with very important data", func() {
+					_, err := db.Exec("create table IF NOT EXISTS important_table (message text)")
+					Expect(err).NotTo(HaveOccurred())
+
+					_, err = db.Exec("insert into important_table values ($1)", "Important Data")
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				By("backing up the demo cluster", func() {
+					err = pgbr.Backup(config.PgBackRest.Stanza)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				By("remembering a point in time where everything was good", func() {
+					err = db.QueryRow("select current_timestamp").Scan(&backupPointInTime)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				By("dropping the important table", func() {
+					_, err := db.Exec("drop table important_table")
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				By("stopping the cluster", func() {
+					err = clustr.Stop(config.DB.Version, config.DB.ClusterName)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				By(fmt.Sprintf("restoring the cluster to the point in time when it was backed up: %v", backupPointInTime), func() {
+					err = pgbr.RestoreTo(config.PgBackRest.Stanza, backupPointInTime)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				By("displaying recovery.conf", func() {
+					stdout, stderr, err := ssh.Run("sudo -u postgres cat /var/lib/postgresql/%s/%s/recovery.conf", config.DB.Version, config.DB.ClusterName)
+					println(stdout)
+					Expect(err).ToNot(HaveOccurred(), "stderr: %v\nstdout:%v\n", stderr, stdout)
+				})
+
+				By("starting the cluster", func() {
+					err = clustr.Start(config.DB.Version, config.DB.ClusterName)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				// TODO Without pg_wal_replay_resume(), the test blocks forever
+				By("resuming WAL replay", func() {
+					stdout, stderr, err := ssh.Run("sudo -u postgres psql -c 'select pg_wal_replay_resume();'")
+					Expect(err).ToNot(HaveOccurred(), "stderr: %v\nstdout:%v\n", stderr, stdout)
+				})
+
+				By("Check that the important table exists", func() {
+					var message string
+					err = db.QueryRow("select message from important_table").Scan(&message)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(message).To(Equal("Important Data"))
 				})
 			})
 		})
 	})
 })
+
+/*
+Later:
+Drop the important table (again)
+Perform a backup then attempt recovery from that backup
+Examine the PostgreSQL log output to discover the recovery was not successful
+Get backup info for the demo cluster
+Stop PostgreSQL, restore from the selected backup, and start PostgreSQL
+Examine the PostgreSQL log output for log messages indicating success
+*/

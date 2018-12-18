@@ -1,7 +1,10 @@
 package pgbackrest
 
-import "fmt"
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+	"time"
+)
 
 type Info struct {
 	Name   string
@@ -54,6 +57,22 @@ func (ctl Controller) Backup(stanza string) error {
 // Restores a backup for the given stanza
 func (ctl Controller) Restore(stanza string) error {
 	stdout, stderr, err := ctl.Runner.Run("sudo -u postgres pgbackrest --stanza=%s restore", stanza)
+
+	if err != nil {
+		return fmt.Errorf("Error: %v\nstderr:\n%v\nstdout:\n%v\n", err, stdout, stderr)
+	}
+
+	return nil
+}
+
+// Restores a backup for the given stanza to a specific point in time
+func (ctl Controller) RestoreTo(stanza string, pointInTime time.Time) error {
+	pointInTimeRFC := fmt.Sprintf((pointInTime.Format(time.RFC3339)))
+	stdout, stderr, err := ctl.Runner.Run(
+		"sudo -u postgres pgbackrest --stanza=%s --delta --type=time \"--target=%s\" restore",
+		stanza,
+		pointInTimeRFC,
+	)
 
 	if err != nil {
 		return fmt.Errorf("Error: %v\nstderr:\n%v\nstdout:\n%v\n", err, stdout, stderr)

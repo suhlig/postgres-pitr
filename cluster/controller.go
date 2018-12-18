@@ -42,3 +42,14 @@ func (ctl Controller) Stop(version, name string) error {
 
 	return nil
 }
+
+// Clear removes all files of the cluster with the given version and name
+func (ctl Controller) Clear(version, name string) error {
+	stdout, stderr, err := ctl.Runner.Run("sudo -u postgres find /var/lib/postgresql/%s/%s -mindepth 1 -delete", version, name)
+
+	if err != nil {
+		return fmt.Errorf("Error: %v\nstderr:\n%v\nstdout:\n%v\n", err, stdout, stderr)
+	}
+
+	return nil
+}

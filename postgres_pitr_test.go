@@ -64,6 +64,20 @@ var _ = Describe("a VM with PostgreSQL", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
+		// Use this to quickly restore from a backup
+		// FIt("DEBUG Restores a backup", func() {
+		// 	clustr.Stop(config.DB.Version, config.DB.ClusterName)
+
+		// 	err = clustr.Clear(config.DB.Version, config.DB.ClusterName)
+		// 	Expect(err).NotTo(HaveOccurred())
+
+		// 	err = pgbr.Restore(config.PgBackRest.Stanza)
+		// 	Expect(err).NotTo(HaveOccurred())
+
+		// 	err = clustr.Start(config.DB.Version, config.DB.ClusterName)
+		// 	Expect(err).NotTo(HaveOccurred())
+		// })
+
 		Context("A backup exists", func() {
 			BeforeEach(func() {
 				err = pgbr.Backup(config.PgBackRest.Stanza)
@@ -90,7 +104,7 @@ var _ = Describe("a VM with PostgreSQL", func() {
 					})
 
 					By("deleting the pg_control file", func() {
-						stdout, stderr, err := ssh.Run("sudo -u postgres rm /var/lib/postgresql/%s/%s/global/pg_control", config.DB.Version, config.DB.ClusterName)
+						stdout, stderr, err := ssh.Run("sudo -u postgres rm --force /var/lib/postgresql/%s/%s/global/pg_control", config.DB.Version, config.DB.ClusterName)
 						Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
 					})
 
@@ -100,8 +114,8 @@ var _ = Describe("a VM with PostgreSQL", func() {
 					})
 
 					By("removing all files from the PostgreSQL data directory", func() {
-						stdout, stderr, err := ssh.Run("sudo -u postgres find /var/lib/postgresql/%s/%s -mindepth 1 -delete", config.DB.Version, config.DB.ClusterName)
-						Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
+						err = clustr.Clear(config.DB.Version, config.DB.ClusterName)
+						Expect(err).ToNot(HaveOccurred())
 					})
 
 					By("restoring the backup", func() {
@@ -165,12 +179,10 @@ var _ = Describe("a VM with PostgreSQL", func() {
 					Expect(err).NotTo(HaveOccurred())
 				})
 
-				By("stopping the cluster", func() {
+				By(fmt.Sprintf("restoring the cluster to the point in time when it was backed up: %v", backupPointInTime), func() {
 					err = clustr.Stop(config.DB.Version, config.DB.ClusterName)
 					Expect(err).NotTo(HaveOccurred())
-				})
 
-				By(fmt.Sprintf("restoring the cluster to the point in time when it was backed up: %v", backupPointInTime), func() {
 					err = pgbr.RestoreTo(config.PgBackRest.Stanza, backupPointInTime)
 					Expect(err).NotTo(HaveOccurred())
 				})

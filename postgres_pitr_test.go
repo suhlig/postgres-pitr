@@ -21,7 +21,7 @@ var _ = Describe("a VM with PostgreSQL", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	Context("Database connection established", func() {
+	Context("Database URL exists", func() {
 		var url string
 		var db *sql.DB
 
@@ -33,7 +33,7 @@ var _ = Describe("a VM with PostgreSQL", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("can connect", func() {
+		It("can be pinged", func() {
 			err = db.Ping()
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -43,24 +43,6 @@ var _ = Describe("a VM with PostgreSQL", func() {
 			err = db.QueryRow("SHOW server_version_num;").Scan(&version)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(version).To(BeNumerically(">=", 110000))
-		})
-	})
-
-	Context("Configuration file contains an entry", func() {
-		Context("for the cluster", func() {
-			It("has the configured server version", func() {
-				Expect(config.DB.Version).ToNot(BeEmpty())
-			})
-
-			It("has the configured cluster name", func() {
-				Expect(config.DB.ClusterName).ToNot(BeEmpty())
-			})
-		})
-
-		Context("for pgbackrest", func() {
-			It("has the configured stanza", func() {
-				Expect(config.PgBackRest.Stanza).ToNot(BeEmpty())
-			})
 		})
 	})
 

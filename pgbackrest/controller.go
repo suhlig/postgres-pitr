@@ -42,7 +42,7 @@ func (ctl Controller) Info(stanza string) ([]Info, error) {
 
 // Creates a new backup for the given stanza
 func (ctl Controller) Backup(stanza string) error {
-	stdout, stderr, err := ctl.Runner.Run("sudo -u postgres pgbackrest --stanza=%s backup", stanza)
+	stdout, stderr, err := ctl.Runner.Run("sudo -u postgres pgbackrest --stanza=%s backup --type=incr", stanza)
 
 	if err != nil {
 		return fmt.Errorf("Error: %v\nstderr:\n%v\nstdout:\n%v\n", err, stdout, stderr)

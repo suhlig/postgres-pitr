@@ -198,7 +198,7 @@ var _ = Describe("a VM with PostgreSQL", func() {
 					Expect(err).NotTo(HaveOccurred())
 				})
 
-				// TODO Without pg_wal_replay_resume(), the test blocks forever
+				// TODO Without pg_wal_replay_resume(), the test blocks forever because the DB is read-only
 				By("resuming WAL replay", func() {
 					stdout, stderr, err := ssh.Run("sudo -u postgres psql -c 'select pg_wal_replay_resume();'")
 					Expect(err).ToNot(HaveOccurred(), "stderr: %v\nstdout:%v\n", stderr, stdout)
@@ -214,13 +214,3 @@ var _ = Describe("a VM with PostgreSQL", func() {
 		})
 	})
 })
-
-/*
-Later:
-Drop the important table (again)
-Perform a backup then attempt recovery from that backup
-Examine the PostgreSQL log output to discover the recovery was not successful
-Get backup info for the demo cluster
-Stop PostgreSQL, restore from the selected backup, and start PostgreSQL
-Examine the PostgreSQL log output for log messages indicating success
-*/

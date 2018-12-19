@@ -48,3 +48,12 @@
 - name: Stanza is valid
   command: pgbackrest --stanza={{ pgbackrest.stanza }} check
   become_user: postgres
+
+- name: Make PostgreSQL log all SQL statements
+  lineinfile:
+    path: "/etc/postgresql/{{ db.version }}/{{ db.cluster_name }}/postgresql.conf"
+    regexp: '^log_statement'
+    line: "log_statement = 'all'"
+  notify:
+    - PostgreSQL Restarted
+  become_user: postgres

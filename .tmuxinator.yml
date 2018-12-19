@@ -6,9 +6,11 @@ on_project_stop: vagrant halt
 
 windows:
   - test:
+      layout: tiled
       panes:
         - ginkgo watch -v -r
-        -
+        - vagrant ssh -c 'sudo -u postgres tail -f /var/log/postgresql/postgresql-11-main.log'
+        - 
   - vm:
       panes:
         - "fswatch -r ansible/**/* | xargs -I {} vagrant provision"

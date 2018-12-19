@@ -1,6 +1,6 @@
 # {{ ansible_managed }}
 
-[pitr]
+[{{ pgbackrest.stanza }}]
 pg1-path=/var/lib/postgresql/{{ db.version }}/{{ db.cluster_name }}
 
 [global]

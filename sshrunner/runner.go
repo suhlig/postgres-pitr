@@ -11,44 +11,45 @@ import (
 
 // Runner executes commands via SSH
 type Runner struct {
-	Host sshconfig.SSHHost
+	client *ssh.Client
 }
 
 // New creates a new Runner
 func (runner *Runner) New(host sshconfig.SSHHost) (*Runner, error) {
-	v := &Runner{Host: host}
-	return v, nil
-}
-
-// Run executes the given command via SSH, with args interpolated.
-func (runner *Runner) Run(command string, args ...interface{}) (string, string, error) {
-	privateKey, err := ioutil.ReadFile(runner.Host.IdentityFile)
+	privateKey, err := ioutil.ReadFile(host.IdentityFile)
 
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
 
 	key, err := ssh.ParsePrivateKey(privateKey)
+
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
 
 	config := &ssh.ClientConfig{
-		User:            runner.Host.User,
+		User:            host.User,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(key),
 		},
 	}
 
-	addr := fmt.Sprintf("%s:%d", runner.Host.HostName, runner.Host.Port)
-	client, err := ssh.Dial("tcp", addr, config)
+	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", host.HostName, host.Port), config)
 
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
 
-	session, err := client.NewSession()
+	return &Runner{
+		client: client,
+	}, nil
+}
+
+// Run executes the given command via SSH, with args interpolated.
+func (runner *Runner) Run(command string, args ...interface{}) (string, string, error) {
+	session, err := runner.client.NewSession()
 
 	if err != nil {
 		return "", "", err

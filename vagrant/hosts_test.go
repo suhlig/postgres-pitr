@@ -7,7 +7,6 @@ import (
 )
 
 var _ = Describe("Vagrant Hosts", func() {
-
 	It("has one host", func() {
 		hosts, err := vagrant.Hosts()
 		Expect(err).NotTo(HaveOccurred())

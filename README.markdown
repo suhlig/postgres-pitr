@@ -45,7 +45,6 @@ $ scripts/setup
 
 # TODO
 
-* Why do we need to `pg_wal_replay_resume()` after point-in-time restore?
 * Fix poor error handling in the controllers
 * Add a VM as [Dedicated Repository Host](https://pgbackrest.org/user-guide.html#repo-host)
 * Proper dependency management for the Go part

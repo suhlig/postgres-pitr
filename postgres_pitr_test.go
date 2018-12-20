@@ -257,7 +257,57 @@ var _ = Describe("a PostgreSQL cluster", func() {
 			})
 
 			When("saving a transaction id where everything was good", func() {
-				XIt("can be restored to the given transaction id", func() {
+				var txId int64
+
+				BeforeEach(func() {
+					tx, err := db.Begin()
+					Expect(err).NotTo(HaveOccurred())
+
+					err = tx.QueryRow("select txid_current()").Scan(&txId)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(txId).NotTo(BeNil())
+
+					_, err = tx.Exec("insert into important_table values ($1)", "Important Data")
+					Expect(err).NotTo(HaveOccurred())
+
+					err = tx.Commit()
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("can be restored to the given transaction id", func() {
+					By("dropping the important table", func() {
+						_, err := db.Exec("drop table important_table")
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					By(fmt.Sprintf("restoring the cluster to the transaction id when the data was good: %v", txId), func() {
+						err = clustr.Stop()
+						Expect(err).NotTo(HaveOccurred())
+
+						err := clustr.Clear()
+						Expect(err).NotTo(HaveOccurred())
+
+						err = pgbr.RestoreToTransactionId(config.PgBackRest.Stanza, txId)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					By("displaying recovery.conf", func() {
+						stdout, stderr, err := ssh.Run("sudo -u postgres cat /var/lib/postgresql/%s/%s/recovery.conf", config.DB.Version, config.DB.ClusterName)
+						println(stdout)
+						Expect(err).ToNot(HaveOccurred(), "stderr: %v\nstdout:%v\n", stderr, stdout)
+					})
+
+					By("starting the cluster", func() {
+						err = clustr.Start()
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					By("Check that the important table exists", func() {
+						var message string
+						err = db.QueryRow("select message from important_table").Scan(&message)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(message).To(Equal("Important Data"))
+					})
 				})
 			})
 		})

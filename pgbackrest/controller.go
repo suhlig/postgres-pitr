@@ -105,6 +105,27 @@ func (ctl Controller) RestoreToSavePoint(stanza string, savePoint string) error 
 	return nil
 }
 
+// RestoreToTransactionId restores to the given savepoint
+func (ctl Controller) RestoreToTransactionId(stanza string, txId int64) error {
+	stdout, stderr, err := ctl.Runner.Run(
+		"sudo -u postgres pgbackrest"+
+			" --stanza=%s"+
+			" --delta"+
+			" --type=xid"+
+			" --target=\"%d\""+
+			" --recovery-option='recovery_target_action=promote'"+
+			" restore",
+		stanza,
+		txId,
+	)
+
+	if err != nil {
+		return fmt.Errorf("Error: %v\nstderr:\n%v\nstdout:\n%v\n", err, stdout, stderr)
+	}
+
+	return nil
+}
+
 func parseInfo(stdout string) ([]Info, error) {
 	infos := make([]Info, 0)
 	err := json.Unmarshal([]byte(stdout), &infos)

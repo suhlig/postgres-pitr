@@ -3,6 +3,8 @@ package postgres_pitr_test
 import (
 	"database/sql"
 	"fmt"
+	"math/rand"
+	"strings"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -29,7 +31,19 @@ func forceRestore(pgbr pgbackrest.Controller, clustr cluster.Controller, stanza 
 	Expect(err).NotTo(HaveOccurred())
 }
 
-var _ = Describe("a VM with PostgreSQL", func() {
+func randomName() string {
+	chars := []rune("abcdefghijklmnopqrstuvwxyz0123456789")
+	length := 16
+	var builder strings.Builder
+
+	for i := 0; i < length; i++ {
+		builder.WriteRune(chars[rand.Intn(len(chars))])
+	}
+
+	return builder.String()
+}
+
+var _ = Describe("a PostgreSQL cluster", func() {
 	var config config.Config
 	var err error
 
@@ -63,7 +77,7 @@ var _ = Describe("a VM with PostgreSQL", func() {
 		})
 	})
 
-	Context("A backup exists", func() {
+	Context("with at least one base backup", func() {
 		var ssh *sshrunner.Runner
 		var pgbr pgbackrest.Controller
 		var clustr cluster.Controller
@@ -132,7 +146,7 @@ var _ = Describe("a VM with PostgreSQL", func() {
 		})
 
 		// https://pgbackrest.org/user-guide.html#pitr
-		When("important data was deleted", func() {
+		Context("important data exists", func() {
 			var url string
 			var db *sql.DB
 
@@ -142,63 +156,109 @@ var _ = Describe("a VM with PostgreSQL", func() {
 
 				db, err = sql.Open("postgres", url)
 				Expect(err).NotTo(HaveOccurred())
+
+				_, err := db.Exec("create table IF NOT EXISTS important_table (message text)")
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = db.Exec("insert into important_table values ($1)", "Important Data")
+				Expect(err).NotTo(HaveOccurred())
 			})
 
-			It("can be restored to the given point in time", func() {
+			When("remembering a point in time where everything was good", func() {
 				var backupPointInTime time.Time
 
-				By("creating a table with very important data", func() {
-					_, err := db.Exec("create table IF NOT EXISTS important_table (message text)")
-					Expect(err).NotTo(HaveOccurred())
-
-					_, err = db.Exec("insert into important_table values ($1)", "Important Data")
-					Expect(err).NotTo(HaveOccurred())
-				})
-
-				By("remembering a point in time where everything was good", func() {
+				BeforeEach(func() {
 					err = db.QueryRow("select current_timestamp").Scan(&backupPointInTime)
 					Expect(err).NotTo(HaveOccurred())
 				})
 
-				By("dropping the important table", func() {
-					_, err := db.Exec("drop table important_table")
-					Expect(err).NotTo(HaveOccurred())
+				It("can be restored to the given point in time", func() {
+					By("dropping the important table", func() {
+						_, err := db.Exec("drop table important_table")
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					By(fmt.Sprintf("restoring the cluster to the point in time when the data was good: %v", backupPointInTime), func() {
+						err = clustr.Stop()
+						Expect(err).NotTo(HaveOccurred())
+
+						err := clustr.Clear()
+						Expect(err).NotTo(HaveOccurred())
+
+						err = pgbr.RestoreToPIT(config.PgBackRest.Stanza, backupPointInTime)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					By("displaying recovery.conf", func() {
+						stdout, stderr, err := ssh.Run("sudo -u postgres cat /var/lib/postgresql/%s/%s/recovery.conf", config.DB.Version, config.DB.ClusterName)
+						println(stdout)
+						Expect(err).ToNot(HaveOccurred(), "stderr: %v\nstdout:%v\n", stderr, stdout)
+					})
+
+					By("starting the cluster", func() {
+						err = clustr.Start()
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					By("Check that the important table exists", func() {
+						var message string
+						err = db.QueryRow("select message from important_table").Scan(&message)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(message).To(Equal("Important Data"))
+					})
 				})
+			})
 
-				By(fmt.Sprintf("restoring the cluster to the point in time when the data was good: %v", backupPointInTime), func() {
-					err = clustr.Stop()
-					Expect(err).NotTo(HaveOccurred())
+			When("creating a savepoint where everything was good", func() {
+				var savePoint string
 
-					err := clustr.Clear()
-					Expect(err).NotTo(HaveOccurred())
+				BeforeEach(func() {
+					savePoint = randomName()
 
-					err = pgbr.RestoreTo(config.PgBackRest.Stanza, backupPointInTime)
-					Expect(err).NotTo(HaveOccurred())
-				})
-
-				By("displaying recovery.conf", func() {
-					stdout, stderr, err := ssh.Run("sudo -u postgres cat /var/lib/postgresql/%s/%s/recovery.conf", config.DB.Version, config.DB.ClusterName)
-					println(stdout)
+					stdout, stderr, err := ssh.Run("sudo -u postgres psql -c \"select pg_create_restore_point('%s')\"", savePoint)
 					Expect(err).ToNot(HaveOccurred(), "stderr: %v\nstdout:%v\n", stderr, stdout)
 				})
 
-				By("starting the cluster", func() {
-					err = clustr.Start()
-					Expect(err).NotTo(HaveOccurred())
-				})
+				It("can be restored to the given savepoint", func() {
+					By("dropping the important table", func() {
+						_, err := db.Exec("drop table important_table")
+						Expect(err).NotTo(HaveOccurred())
+					})
 
-				By("Check that the important table exists", func() {
-					var message string
-					err = db.QueryRow("select message from important_table").Scan(&message)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(message).To(Equal("Important Data"))
+					By(fmt.Sprintf("restoring the cluster to the savepoint when the data was good: %v", savePoint), func() {
+						err = clustr.Stop()
+						Expect(err).NotTo(HaveOccurred())
+
+						err := clustr.Clear()
+						Expect(err).NotTo(HaveOccurred())
+
+						err = pgbr.RestoreToSavePoint(config.PgBackRest.Stanza, savePoint)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					By("displaying recovery.conf", func() {
+						stdout, stderr, err := ssh.Run("sudo -u postgres cat /var/lib/postgresql/%s/%s/recovery.conf", config.DB.Version, config.DB.ClusterName)
+						println(stdout)
+						Expect(err).ToNot(HaveOccurred(), "stderr: %v\nstdout:%v\n", stderr, stdout)
+					})
+
+					By("starting the cluster", func() {
+						err = clustr.Start()
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					By("Check that the important table exists", func() {
+						var message string
+						err = db.QueryRow("select message from important_table").Scan(&message)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(message).To(Equal("Important Data"))
+					})
 				})
 			})
 
-			XIt("can be restored to the given savepoint", func() {
-			})
-
-			XIt("can be restored to the given transaction id", func() {
+			When("saving a transaction id where everything was good", func() {
+				XIt("can be restored to the given transaction id", func() {
+				})
 			})
 		})
 	})

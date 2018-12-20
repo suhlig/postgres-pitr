@@ -63,8 +63,8 @@ func (ctl Controller) Restore(stanza string) error {
 	return nil
 }
 
-// RestoreTo a specific point in time
-func (ctl Controller) RestoreTo(stanza string, pointInTime time.Time) error {
+// RestoreToPIT a specific point in time
+func (ctl Controller) RestoreToPIT(stanza string, pointInTime time.Time) error {
 	stdout, stderr, err := ctl.Runner.Run(
 		"sudo -u postgres pgbackrest"+
 			" --stanza=%s"+
@@ -75,6 +75,27 @@ func (ctl Controller) RestoreTo(stanza string, pointInTime time.Time) error {
 			" restore",
 		stanza,
 		fmt.Sprintf((pointInTime.Format(time.RFC3339Nano))),
+	)
+
+	if err != nil {
+		return fmt.Errorf("Error: %v\nstderr:\n%v\nstdout:\n%v\n", err, stdout, stderr)
+	}
+
+	return nil
+}
+
+// RestoreToSavePoint restores to the given savepoint
+func (ctl Controller) RestoreToSavePoint(stanza string, savePoint string) error {
+	stdout, stderr, err := ctl.Runner.Run(
+		"sudo -u postgres pgbackrest"+
+			" --stanza=%s"+
+			" --delta"+
+			" --type=name"+
+			" --target=\"%s\""+
+			" --recovery-option='recovery_target_action=promote'"+
+			" restore",
+		stanza,
+		savePoint,
 	)
 
 	if err != nil {

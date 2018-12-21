@@ -24,9 +24,11 @@ var _ = Describe("Minio", func() {
 			fmt.Sprintf("localhost:%d", config.Minio.LocalPort),
 			config.Minio.AccessKey,
 			config.Minio.SecretKey,
-			false,
+			true,
 		)
 		Expect(err).ToNot(HaveOccurred())
+
+		s3c.SetCustomTransport(&http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}})
 	})
 
 	Context("at least one bucket exists", func() {

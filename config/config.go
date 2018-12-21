@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"io/ioutil"
-	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -16,15 +15,23 @@ type Config struct {
 		Port        int
 		Name        string
 		User        string
+		Password    string
 	}
 
 	PgBackRest struct {
 		Stanza string
 	}
+
+	Minio struct {
+		Port      int
+		AccessKey string `yaml:"access_key"`
+		SecretKey string `yaml:"secret_key"`
+	}
 }
 
-func (_ Config) New(path string) (Config, error) {
-	cfg := Config{}
+// New creates a new Config struct from the given path to the config file
+func (cfg Config) FromFile(path string) (Config, error) {
+	cfg = Config{}
 	cfg.DB.Host = "localhost"
 	cfg.DB.Port = 5432
 
@@ -39,22 +46,7 @@ func (_ Config) New(path string) (Config, error) {
 	return cfg, err
 }
 
-func (cfg Config) Password() (string, error) {
-	password, err := ioutil.ReadFile("ansible/.postgres-password")
-
-	if err != nil {
-		return "", err
-	}
-
-	return strings.TrimSuffix(string(password), "\n"), nil
-}
-
+// DatabaseURL returns the URL to access the database
 func (cfg Config) DatabaseURL() (string, error) {
-	password, err := cfg.Password()
-
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s", cfg.DB.User, password, cfg.DB.Host, cfg.DB.Port, cfg.DB.Name), nil
+	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s", cfg.DB.User, cfg.DB.Password, cfg.DB.Host, cfg.DB.Port, cfg.DB.Name), nil
 }

@@ -1,8 +1,5 @@
-- hosts: all
+- hosts: databases
   become: true
-
-  vars:
-    - ansible_python_interpreter: /usr/bin/python3
 
   vars_files:
     - ../config.yml
@@ -11,3 +8,13 @@
     - common
     - postgres
     - pgbackrest
+
+- hosts: blobstores
+  become: true
+
+  vars_files:
+    - ../config.yml
+
+  roles:
+    - common
+    - minio

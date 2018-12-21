@@ -1,0 +1,60 @@
+#
+# This implements https://github.com/minio/minio-service/blob/master/linux-systemd/README.md
+#
+
+- name: Download binary
+  get_url:
+    url: "https://dl.minio.io/server/minio/release/linux-amd64/minio"
+    dest: "/usr/local/bin/minio"
+    mode: "0755"
+  become: true
+
+- name: Create system group
+  group:
+    name: minio
+    state: present
+  become: true
+  tags: minio
+
+- name: Create system user
+  user:
+    name: minio
+    group: minio
+    system: true
+    createhome: false
+    home: /var/lib/minio
+    shell: /bin/false
+  become: true
+
+- name: Create home directory
+  file:
+    path: /var/lib/minio
+    state: directory
+    owner: minio
+    group: minio
+  become: true
+
+- name: Render service defaults
+  template:
+    src: defaults.j2
+    dest: /etc/default/minio
+    mode: "0644"
+    owner: minio
+    group: minio
+  notify:
+    - Minio Restarted
+  become: true
+
+- name: Copy service definition file
+  copy:
+    src: minio.service
+    dest: /lib/systemd/system/minio.service
+  notify:
+    - Minio Restarted
+  become: true
+
+- name: Service is running and enabled at boot
+  service:
+    name: minio
+    state: started
+    enabled: yes

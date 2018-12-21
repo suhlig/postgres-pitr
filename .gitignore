@@ -1,4 +1,4 @@
-*.retry
-.postgres-password
-.vagrant
 *.log
+*.retry
+.vagrant
+.vscode

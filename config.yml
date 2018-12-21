@@ -4,11 +4,17 @@ db:
   port: 15432
   name: sandbox
   user: foobar
-  password: "{{ lookup('password', '.postgres-password') }}"
+  password: "9Gp0efB5VYBdeOu-TnbTb5VqjnsLFXw7rUV55SidDk8"
   # The following values are optional or have defaults:
   # host: localhost
   # params:
   #   sslmode: verify-full
   #   connect_timeout: 10
+
 pgbackrest:
   stanza: pitr
+
+minio:
+  port: 18080
+  access_key: "-5AV_l3QpgKTxqTBaIvtTHxL8BM4Hadm6T1bSpWeL9g"
+  secret_key: "mJ5e-3GMUPnSaGYSlHzTmxL01Qu20ZtZdMrP8u4H9Fc"

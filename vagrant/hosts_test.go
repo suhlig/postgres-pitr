@@ -7,9 +7,9 @@ import (
 )
 
 var _ = Describe("Vagrant Hosts", func() {
-	It("has one host", func() {
+	It("has at lease one host", func() {
 		hosts, err := vagrant.Hosts()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(len(hosts)).To(BeNumerically("==", 1), "Expect exactly one host, but found %d", len(hosts))
+		Expect(len(hosts)).To(BeNumerically(">=", 1), "Expect exactly one host, but found %d", len(hosts))
 	})
 })

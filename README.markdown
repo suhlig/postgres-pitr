@@ -45,7 +45,7 @@ $ scripts/setup
 
 # TODO
 
+* Proper dependency management for the Go part
 * Fix poor error handling in the controllers
 * Add a VM as [Dedicated Repository Host](https://pgbackrest.org/user-guide.html#repo-host)
-* Proper dependency management for the Go part
 * Test more than the happy path

@@ -48,7 +48,7 @@ var _ = Describe("a PostgreSQL cluster", func() {
 	var err error
 
 	BeforeEach(func() {
-		config, err = config.New("config.yml")
+		config, err = config.FromFile("config.yml")
 		Expect(err).NotTo(HaveOccurred())
 	})
 

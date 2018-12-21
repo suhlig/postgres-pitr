@@ -5,33 +5,37 @@ require 'securerandom'
 
 module PITR
   module Config
-    class DB
-      def initialize(path)
-        @config = YAML.load_file(path).fetch('db').merge('password' => read_password)
-      end
+    class Base
+      attr_reader :config
 
+      def initialize(path)
+        @config = YAML.load_file(path)
+      end
+    end
+
+    class DB < Base
       def user
-        @config.fetch('user', nil)
+        db.fetch('user')
       end
 
       def host
-        @config.fetch('host', 'localhost')
+        db.fetch('host', 'localhost')
       end
 
       def port
-        @config.fetch('port', URI::Postgres::DEFAULT_PORT)
+        db.fetch('port', URI::Postgres::DEFAULT_PORT)
       end
 
       def name
-        @config.fetch('name', nil)
+        db.fetch('name')
       end
 
       def password
-        @config.fetch('password', nil)
+        db.fetch('password')
       end
 
       def params
-        @config.fetch('params', nil)
+        db.fetch('params', {})
       end
 
       def url
@@ -46,16 +50,29 @@ module PITR
 
       private
 
-      def read_password
-        password_file = Pathname(__dir__) / '../../ansible/.postgres-password'
+      def db
+        config.fetch('db')
+      end
 
-        if password_file.exist?
-          password_file.read.chomp
-        else
-          SecureRandom.urlsafe_base64(32).tap do |password|
-            password_file.write(password)
-          end
-        end
+    end
+
+    class Minio < Base
+      def port
+        minio.fetch('port', 9000)
+      end
+
+      def access_key
+        minio.fetch('access_key')
+      end
+
+      def secret_key
+        minio.fetch('secret_key')
+      end
+
+      private
+
+      def minio
+        config.fetch('minio')
       end
     end
   end

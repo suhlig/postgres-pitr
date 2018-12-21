@@ -13,6 +13,7 @@ type Config struct {
 		ClusterName string `yaml:"cluster_name"`
 		Host        string
 		Port        int
+		LocalPort   int `yaml:"local_port"`
 		Name        string
 		User        string
 		Password    string
@@ -24,6 +25,7 @@ type Config struct {
 
 	Minio struct {
 		Host      string
+		LocalPort int `yaml:"local_port"`
 		Port      int
 		AccessKey string `yaml:"access_key"`
 		SecretKey string `yaml:"secret_key"`
@@ -33,8 +35,8 @@ type Config struct {
 // FromFile creates a new Config struct from the given path to the config file
 func (cfg Config) FromFile(path string) (Config, error) {
 	cfg = Config{}
-	cfg.DB.Host = "localhost"
 	cfg.DB.Port = 5432
+	cfg.Minio.Port = 443
 
 	yamlFile, err := ioutil.ReadFile(path)
 
@@ -49,5 +51,5 @@ func (cfg Config) FromFile(path string) (Config, error) {
 
 // DatabaseURL returns the URL to access the database
 func (cfg Config) DatabaseURL() (string, error) {
-	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s", cfg.DB.User, cfg.DB.Password, cfg.DB.Host, cfg.DB.Port, cfg.DB.Name), nil
+	return fmt.Sprintf("postgres://%s:%s@localhost:%d/%s", cfg.DB.User, cfg.DB.Password, cfg.DB.LocalPort, cfg.DB.Name), nil
 }

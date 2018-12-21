@@ -1,7 +1,9 @@
 package minio_test
 
 import (
+	"crypto/tls"
 	"fmt"
+	"net/http"
 
 	s3 "github.com/minio/minio-go"
 	. "github.com/onsi/ginkgo"
@@ -19,7 +21,7 @@ var _ = Describe("Minio", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		s3c, err = s3.New(
-			fmt.Sprintf("%s:%d", config.Minio.Host, config.Minio.Port),
+			fmt.Sprintf("localhost:%d", config.Minio.LocalPort),
 			config.Minio.AccessKey,
 			config.Minio.SecretKey,
 			false,

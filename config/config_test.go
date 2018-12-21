@@ -37,9 +37,9 @@ var _ = Describe("Config", func() {
 		})
 
 		Context("for minio", func() {
-			It("has a port", func() {
-				Expect(config.Minio.Port).ToNot(BeNil())
-				Expect(config.Minio.Port).To(BeNumerically(">", 0))
+			It("has a local port", func() {
+				Expect(config.Minio.LocalPort).ToNot(BeNil())
+				Expect(config.Minio.LocalPort).To(BeNumerically(">", 0))
 			})
 
 			It("has an access key", func() {

@@ -2,9 +2,19 @@ require_relative 'lib/pitr/config'
 require 'pathname'
 
 db = PITR::Config::DB.new(Pathname(__dir__) / 'config.yml')
+minio = PITR::Config::Minio.new(Pathname(__dir__) / 'config.yml')
 
 Vagrant.configure('2') do |config|
   config.vm.box = 'ubuntu/bionic64'
+
+  config.vm.define 'minio' do |cfg|
+    cfg.vm.hostname = 'minio'
+    cfg.vm.network 'private_network', ip: minio.host
+    cfg.vm.network 'forwarded_port', guest: minio.port, host: minio.local_port
+
+    # TODO Create minio.local_url
+    cfg.vm.post_up_message = "Minio can be browsed at https://localhost:#{minio.local_port}/"
+  end
 
   config.vm.define 'postgres' do |cfg|
     cfg.vm.hostname = 'postgres'
@@ -21,6 +31,7 @@ Vagrant.configure('2') do |config|
     }
     ansbl.groups = {
       'databases' => ['postgres'],
+      'blobstores' => ['minio'],
     }
   end
 

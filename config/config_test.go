@@ -35,5 +35,20 @@ var _ = Describe("Config", func() {
 				Expect(config.PgBackRest.Stanza).To(Equal("pitr"))
 			})
 		})
+
+		Context("for minio", func() {
+			It("has a local port", func() {
+				Expect(config.Minio.LocalPort).ToNot(BeNil())
+				Expect(config.Minio.LocalPort).To(BeNumerically(">", 0))
+			})
+
+			It("has an access key", func() {
+				Expect(config.Minio.AccessKey).ToNot(BeEmpty())
+			})
+
+			It("has an secret key", func() {
+				Expect(config.Minio.SecretKey).ToNot(BeEmpty())
+			})
+		})
 	})
 })

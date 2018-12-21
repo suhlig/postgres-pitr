@@ -1,0 +1,37 @@
+[Unit]
+Description=Minio
+Documentation=https://docs.minio.io
+Wants=network-online.target
+After=network-online.target
+AssertFileIsExecutable=/usr/local/bin/minio
+
+[Service]
+WorkingDirectory=/var/lib/minio
+User=minio
+Group=minio
+PermissionsStartOnly=true
+
+Environment=MINIO_ACCESS_KEY={{ minio.access_key }}
+Environment=MINIO_SECRET_KEY={{ minio.secret_key }}
+Environment=MINIO_HTTP_TRACE=/var/log/minio.log
+
+ExecStart=/usr/local/bin/minio server --address ":443" /var/lib/minio
+
+# Let systemd restart this service only if it has ended with the clean exit code or signal.
+Restart=on-success
+
+# Sensible logging
+StandardOutput=journal
+StandardError=inherit
+
+# Specifies the maximum file descriptor number that can be opened by this process
+LimitNOFILE=65536
+
+# Disable timeout logic and wait until process is stopped
+TimeoutStopSec=0
+KillSignal=SIGTERM
+SendSIGKILL=no
+SuccessExitStatus=0
+
+[Install]
+WantedBy=multi-user.target

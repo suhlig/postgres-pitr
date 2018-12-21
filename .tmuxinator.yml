@@ -22,6 +22,11 @@ windows:
         - vagrant ssh postgres
         - psql <%= Shellwords.escape(db.local_url) %>
 
+  - minio:
+      panes:
+        - vagrant ssh minio -c 'sudo -u minio tail -f /var/log/minio.log'
+        - vagrant ssh minio
+
   - deployment:
       panes:
         - scripts/watch

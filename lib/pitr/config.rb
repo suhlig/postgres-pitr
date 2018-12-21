@@ -75,5 +75,33 @@ module PITR
         params&.map{|kv| kv.join('=') }&.join('&')
       end
     end
+
+    class Minio < Base
+      def host
+        minio.fetch('host')
+      end
+
+      def local_port
+        minio.fetch('local_port')
+      end
+
+      def port
+        minio.fetch('port', 443)
+      end
+
+      def access_key
+        minio.fetch('access_key')
+      end
+
+      def secret_key
+        minio.fetch('secret_key')
+      end
+
+      private
+
+      def minio
+        config.fetch('minio')
+      end
+    end
   end
 end

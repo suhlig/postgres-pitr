@@ -8,3 +8,13 @@
     - common
     - postgres
     - pgbackrest
+
+- hosts: blobstores
+  become: true
+
+  vars_files:
+    - ../config.yml
+
+  roles:
+    - common
+    - minio

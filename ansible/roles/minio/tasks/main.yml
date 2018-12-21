@@ -49,6 +49,9 @@
     - Minio Restarted
   become: true
 
+- name: Use TLS
+  include_tasks: tls.yml
+
 - name: Service is running and enabled at boot
   service:
     name: minio

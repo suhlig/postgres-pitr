@@ -1,0 +1,49 @@
+- name: OpenSSL is installed
+  apt:
+    name:
+      - openssl
+    state: present
+
+- name: Create certs directory
+  file:
+    path: /var/lib/minio/.minio/certs
+    state: directory
+    owner: minio
+    group: minio
+  become: true
+
+# Modeled after https://www.jeffgeerling.com/blog/2017/self-signed-certificates-ansible-local-testing-nginx
+- name: Create self-signed certificate
+  command: >
+    openssl req -x509 -nodes -subj '/CN={{ minio.host }}' -days 365 -newkey rsa:4096 -sha256
+      -keyout /var/lib/minio/.minio/certs/private.key
+      -out    /var/lib/minio/.minio/certs/public.crt
+  args:
+    creates:
+      - /var/lib/minio/.minio/certs/public.crt
+      - /var/lib/minio/.minio/certs/private.key
+  become: true
+
+- name: Certificate files has the correct ownership
+  file:
+    path: /var/lib/minio/.minio/certs/public.crt
+    state: file
+    owner: minio
+    group: minio
+    mode: 0755
+  become: true
+
+- name: Private key has the correct ownership
+  file:
+    path: /var/lib/minio/.minio/certs/private.key
+    state: file
+    owner: minio
+    group: minio
+    mode: 0600
+  become: true
+
+- name: Minio can binto to privileged ports
+  capabilities:
+    path: /usr/local/bin/minio
+    capability: cap_net_bind_service+ep
+    state: present

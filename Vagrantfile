@@ -7,14 +7,18 @@ minio = PITR::Config::Minio.new(Pathname(__dir__) / 'config.yml')
 Vagrant.configure('2') do |config|
   config.vm.box = 'ubuntu/bionic64'
 
-  config.vm.define 'postgres' do |cfg|
-    cfg.vm.hostname = 'postgres'
-    cfg.vm.network 'forwarded_port', guest: 5432, host: db.port
-  end
-
   config.vm.define 'minio' do |cfg|
     cfg.vm.hostname = 'minio'
-    cfg.vm.network 'forwarded_port', guest: 9000, host: minio.port
+    cfg.vm.network 'private_network', ip: minio.host
+    cfg.vm.network 'forwarded_port', guest: 443, host: minio.port
+    cfg.vm.post_up_message "Minio can be browsed at https://localhost:#{minio.port}/"
+  end
+
+  config.vm.define 'postgres' do |cfg|
+    cfg.vm.hostname = 'postgres'
+    cfg.vm.network 'private_network', ip: db.host
+    cfg.vm.network 'forwarded_port', guest: 5432, host: db.port
+    cfg.vm.post_up_message "PostgreSQL available at #{db.url}"
   end
 
   config.vm.provision 'ansible' do |ansbl|

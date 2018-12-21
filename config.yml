@@ -6,7 +6,7 @@ db:
   name: sandbox
   user: foobar
   password: "9Gp0efB5VYBdeOu-TnbTb5VqjnsLFXw7rUV55SidDk8"
-  # The following values are optional or have defaults:
+  # Params are optional:
   # params:
   #   sslmode: verify-full
   #   connect_timeout: 10

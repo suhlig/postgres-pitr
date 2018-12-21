@@ -18,7 +18,6 @@
       - libpq-dev
       - python3-psycopg2
     state: present
-  tags: packages
 
 - name: Server is running
   service:

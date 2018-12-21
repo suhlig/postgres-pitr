@@ -3,7 +3,6 @@
     name:
       - pgbackrest
     state: present
-  tags: packages
 
 - name: Config file is up to date
   template:

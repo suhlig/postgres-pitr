@@ -2,6 +2,9 @@
   apt:
     name:
       - pgbackrest
+      - libdbd-pg-perl
+      - libio-socket-ssl-perl
+      - libxml-libxml-perl
     state: present
 
 - name: Config file is up to date
@@ -33,8 +36,14 @@
     - PostgreSQL Restarted
   become_user: postgres
 
-- name: PostgreSQL is restarted
-  meta: flush_handlers
+- name: Make PostgreSQL log all SQL statements
+  lineinfile:
+    path: "/etc/postgresql/{{ db.version }}/{{ db.cluster_name }}/postgresql.conf"
+    regexp: '^log_statement'
+    line: "log_statement = 'all'"
+  notify:
+    - PostgreSQL Restarted
+  become_user: postgres
 
 - name: Stanza exists
   command: pgbackrest --stanza={{ pgbackrest.stanza }} stanza-create
@@ -46,13 +55,4 @@
 
 - name: Stanza is valid
   command: pgbackrest --stanza={{ pgbackrest.stanza }} check
-  become_user: postgres
-
-- name: Make PostgreSQL log all SQL statements
-  lineinfile:
-    path: "/etc/postgresql/{{ db.version }}/{{ db.cluster_name }}/postgresql.conf"
-    regexp: '^log_statement'
-    line: "log_statement = 'all'"
-  notify:
-    - PostgreSQL Restarted
   become_user: postgres

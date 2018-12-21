@@ -10,13 +10,13 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var host sshconfig.SSHHost
+var postgresHost sshconfig.SSHHost
 
 var _ = BeforeSuite(func() {
 	hosts, err := vagrant.Hosts()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(len(hosts)).To(BeNumerically(">=", 1), "Expect exactly one host, but found %d", len(hosts))
-	host = *hosts[0]
+	postgresHost = *hosts[1]
 })
 
 func TestPostgresPitr(t *testing.T) {

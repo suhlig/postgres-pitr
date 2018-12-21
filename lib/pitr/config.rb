@@ -22,6 +22,10 @@ module PITR
         db.fetch('host')
       end
 
+      def local_port
+        db.fetch('local_port', port)
+      end
+
       def port
         db.fetch('port', URI::Postgres::DEFAULT_PORT)
       end
@@ -52,6 +56,16 @@ module PITR
         )
       end
 
+      def local_url
+        URI::Postgres.build(
+          userinfo: [user, password].join(':'),
+          host: 'localhost',
+          port: local_port,
+          path: '/' + name,
+          query: params&.map{|kv| kv.join('=') }&.join('&'),
+        )
+      end
+
       private
 
       def db
@@ -65,8 +79,12 @@ module PITR
         minio.fetch('host')
       end
 
+      def local_port
+        minio.fetch('local_port')
+      end
+
       def port
-        minio.fetch('port', 9000)
+        minio.fetch('port', 443)
       end
 
       def access_key

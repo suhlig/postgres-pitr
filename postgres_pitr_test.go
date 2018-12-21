@@ -83,7 +83,7 @@ var _ = Describe("a PostgreSQL cluster", func() {
 		var clustr cluster.Controller
 
 		BeforeEach(func() {
-			ssh, err = ssh.New(host)
+			ssh, err = ssh.New(postgresHost)
 			Expect(err).NotTo(HaveOccurred())
 
 			clustr, err = cluster.NewController(ssh, config.DB.Version, config.DB.ClusterName)

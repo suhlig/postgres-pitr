@@ -30,7 +30,7 @@ $ scripts/setup
 * Run tests when they changed:
 
   ```sh
-  $ ginkgo watch -v -r
+  $ bin/ginkgo watch -v -r
   ```
 
 * Provision using Ansible when a playbook file has changed:

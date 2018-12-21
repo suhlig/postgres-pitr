@@ -30,7 +30,7 @@ type Config struct {
 	}
 }
 
-// New creates a new Config struct from the given path to the config file
+// FromFile creates a new Config struct from the given path to the config file
 func (cfg Config) FromFile(path string) (Config, error) {
 	cfg = Config{}
 	cfg.DB.Host = "localhost"

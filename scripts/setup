@@ -2,6 +2,7 @@
 
 set -euo pipefail
 IFS=$'\n\t'
+readonly SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
 echo "Installing brew dependencies (may ask for your sudo password):"
 brew bundle
@@ -10,12 +11,7 @@ echo Installing gem dependencies:
 gem install tmuxinator
 
 echo Installing go dependencies:
-go get -u \
-  github.com/onsi/ginkgo/ginkgo \
-  github.com/onsi/gomega \
-  github.com/lib/pq \
-  gopkg.in/yaml.v2 \
-  github.com/mikkeloscar/sshconfig \
-  github.com/minio/minio-go
+go mod download
+GOBIN="$SCRIPTS_DIR/../bin" go install github.com/onsi/ginkgo/ginkgo
 
 echo Done.

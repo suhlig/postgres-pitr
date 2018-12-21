@@ -34,20 +34,17 @@
     group: minio
   become: true
 
-- name: Render service defaults
-  template:
-    src: defaults.j2
-    dest: /etc/default/minio
-    mode: "0644"
+- name: Create log file
+  file:
+    path: /var/log/minio.log
+    state: touch
     owner: minio
     group: minio
-  notify:
-    - Minio Restarted
   become: true
 
-- name: Copy service definition file
-  copy:
-    src: minio.service
+- name: Render service definition file
+  template:
+    src: minio.service.j2
     dest: /lib/systemd/system/minio.service
   notify:
     - Minio Restarted

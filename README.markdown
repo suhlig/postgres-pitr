@@ -7,8 +7,8 @@ This is basically an acceptance test implementing the [Point-in-Time Recovery
 # TL;DR
 
 ```sh
-$ go get github.com/suhlig/postgres-pitr
-$ cd $GOPATH/src/github.com/suhlig/postgres-pitr
+$ git clone https://github.com/suhlig/postgres-pitr
+$ cd postgres-pitr
 $ scripts/setup
 $ tmuxinator
 ```
@@ -16,6 +16,8 @@ $ tmuxinator
 When done, issue `tmuxinator stop local`, and the VM will be shut down, too.
 
 # Development
+
+This project requires Go >= v1.11 because we are using modules.
 
 ## Setup
 
@@ -45,7 +47,6 @@ $ scripts/setup
 
 # TODO
 
-* Proper dependency management for the Go part
-* Fix poor error handling in the controllers
 * Add a VM as [Dedicated Repository Host](https://pgbackrest.org/user-guide.html#repo-host)
+* Fix poor error handling in the controllers
 * Test more than the happy path

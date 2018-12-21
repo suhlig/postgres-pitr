@@ -30,6 +30,10 @@ module PITR
         db.fetch('name')
       end
 
+      def version
+        db.fetch('version')
+      end
+
       def password
         db.fetch('password')
       end

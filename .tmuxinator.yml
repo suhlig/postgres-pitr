@@ -1,20 +1,33 @@
-<% require_relative 'lib/pitr/config' %>
+<%
+  require 'shellwords'
+  require_relative 'lib/pitr/config'
+  db = PITR::Config::DB.new('config.yml')
+%>
+
 name: <%= File.basename(Dir.pwd) %>
 
 on_project_start: vagrant up
 on_project_stop: vagrant halt
 
 windows:
-  - test:
+  - tests:
       layout: tiled
       panes:
-        - ginkgo watch -v -r
-        - vagrant ssh -c 'sudo -u postgres tail -f /var/log/postgresql/postgresql-11-main.log'
-        - 
-  - vm:
+        - bin/ginkgo watch -v -r
+        - vagrant ssh postgres -c 'sudo -u postgres tail -f /var/log/postgresql/postgresql-<%= db.version %>-main.log'
+        -
+
+  - postgres:
+      panes:
+        - vagrant ssh postgres
+        - psql <%= Shellwords.escape(db.url) %>
+
+  - minio:
+      panes:
+        - vagrant ssh minio -c 'sudo -u minio tail -f /var/log/minio.log'
+        - vagrant ssh minio
+
+  - deployment:
       panes:
         - "fswatch -r ansible/**/* | xargs -I {} vagrant provision"
-        - vagrant ssh
-  - db:
-      panes:
-        - "psql <%= PITR::Config::DB.new('config.yml').url %>"
+        -

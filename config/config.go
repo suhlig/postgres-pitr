@@ -23,6 +23,7 @@ type Config struct {
 	}
 
 	Minio struct {
+		Host      string
 		Port      int
 		AccessKey string `yaml:"access_key"`
 		SecretKey string `yaml:"secret_key"`

@@ -19,7 +19,7 @@ module PITR
       end
 
       def host
-        db.fetch('host', 'localhost')
+        db.fetch('host')
       end
 
       def port
@@ -61,6 +61,10 @@ module PITR
     end
 
     class Minio < Base
+      def host
+        minio.fetch('host')
+      end
+
       def port
         minio.fetch('port', 9000)
       end

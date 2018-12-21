@@ -19,7 +19,7 @@ var _ = Describe("Minio", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		s3c, err = s3.New(
-			fmt.Sprintf("localhost:%d", config.Minio.Port),
+			fmt.Sprintf("%s:%d", config.Minio.Host, config.Minio.Port),
 			config.Minio.AccessKey,
 			config.Minio.SecretKey,
 			false,

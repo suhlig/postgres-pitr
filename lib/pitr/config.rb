@@ -47,23 +47,11 @@ module PITR
       end
 
       def url
-        URI::Postgres.build(
-          userinfo: [user, password].join(':'),
-          host: host,
-          port: port,
-          path: '/' + name,
-          query: params&.map{|kv| kv.join('=') }&.join('&'),
-        )
+        URI::Postgres.build( components(host, port) )
       end
 
       def local_url
-        URI::Postgres.build(
-          userinfo: [user, password].join(':'),
-          host: 'localhost',
-          port: local_port,
-          path: '/' + name,
-          query: params&.map{|kv| kv.join('=') }&.join('&'),
-        )
+        URI::Postgres.build( components('localhost', local_port) )
       end
 
       private
@@ -72,6 +60,20 @@ module PITR
         config.fetch('db')
       end
 
+      def components(host, port)
+        {
+          userinfo: [user, password].join(':'),
+          host: host,
+          port: port,
+          path: '/' + name,
+          query: query_string,
+        }
+      end
+
+      def query_string
+        return if params.empty?
+        params&.map{|kv| kv.join('=') }&.join('&')
+      end
     end
 
     class Minio < Base

@@ -11,7 +11,7 @@ var _ = Describe("SSH Runner", func() {
 	var err error
 
 	BeforeEach(func() {
-		Expect(len(hosts)).To(BeNumerically(">=", 1), "Expect at lease one host, but found %d", len(hosts))
+		Expect(len(hosts)).To(BeNumerically(">=", 1), "Expect at least one host, but found %d", len(hosts))
 
 		host := *hosts[1]
 		Expect(host.Host).To(ContainElement("postgres"))

@@ -20,7 +20,7 @@ windows:
   - postgres:
       panes:
         - vagrant ssh postgres
-        - psql <%= Shellwords.escape(db.url) %>
+        - psql <%= Shellwords.escape(db.local_url) %>
 
   - minio:
       panes:

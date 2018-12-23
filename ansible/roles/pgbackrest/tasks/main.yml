@@ -53,6 +53,9 @@
       - /var/lib/pgbackrest/backup/{{ pgbackrest.stanza }}/backup.info
   become_user: postgres
 
+- name: PostgreSQL is restarted
+  meta: flush_handlers
+
 - name: Stanza is valid
   command: pgbackrest --stanza={{ pgbackrest.stanza }} check
   become_user: postgres

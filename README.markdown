@@ -10,7 +10,7 @@ This is basically an acceptance test implementing the [Point-in-Time Recovery
 $ git clone https://github.com/suhlig/postgres-pitr
 $ cd postgres-pitr
 $ scripts/setup
-$ tmuxinator
+$ tmuxinator # will run tests
 ```
 
 When done, issue `tmuxinator stop local`, and the VM will be shut down, too.
@@ -25,6 +25,12 @@ This project requires Go >= v1.11 because we are using modules.
 $ scripts/setup
 ```
 
+## Run Tests
+
+```sh
+$ bin/ginkgo -v -r
+```
+
 ## Iterate
 
 * Run tests when they changed:
@@ -33,7 +39,7 @@ $ scripts/setup
   $ bin/ginkgo watch -v -r
   ```
 
-* Provision using Ansible when a playbook file has changed:
+* Provision using Ansible when a deployment-related file has changed:
 
   ```sh
   $ fswatch -r ansible/**/* | xargs -I {} vagrant provision
@@ -47,6 +53,8 @@ $ scripts/setup
 
 # TODO
 
+* Test archiving to S3
+* Test encryption
 * Add a VM as [Dedicated Repository Host](https://pgbackrest.org/user-guide.html#repo-host)
 * Fix poor error handling in the controllers
 * Test more than the happy path

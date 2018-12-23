@@ -20,17 +20,9 @@
     name: minio
     group: minio
     system: true
-    createhome: false
+    createhome: true
     home: /var/lib/minio
     shell: /bin/false
-  become: true
-
-- name: Create home directory
-  file:
-    path: /var/lib/minio
-    state: directory
-    owner: minio
-    group: minio
   become: true
 
 - name: Create log file

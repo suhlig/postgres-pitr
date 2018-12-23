@@ -42,7 +42,7 @@
     mode: 0600
   become: true
 
-- name: Minio can binto to privileged ports
+- name: Minio can bind to to privileged ports
   capabilities:
     path: /usr/local/bin/minio
     capability: cap_net_bind_service+ep

@@ -10,7 +10,7 @@ This is basically an acceptance test implementing the [Point-in-Time Recovery
 $ git clone https://github.com/suhlig/postgres-pitr
 $ cd postgres-pitr
 $ scripts/setup
-$ tmuxinator # will run tests
+$ tmuxinator
 ```
 
 When done, issue `tmuxinator stop local`, and the VM will be shut down, too.

@@ -6,7 +6,7 @@
 
 name: <%= File.basename(Dir.pwd) %>
 
-on_project_start: vagrant up
+on_project_start: vagrant up --provision
 on_project_stop: vagrant halt
 
 windows:

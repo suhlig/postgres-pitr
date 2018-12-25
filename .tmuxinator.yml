@@ -13,7 +13,7 @@ windows:
   - tests:
       layout: tiled
       panes:
-        - bin/ginkgo watch -v -r
+        - bin/ginkgo -v -r; bin/ginkgo watch -v -r
         - vagrant ssh postgres -c 'sudo -u postgres tail -f /var/log/postgresql/postgresql-<%= db.version %>-main.log'
         -
 

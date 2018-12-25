@@ -42,7 +42,7 @@ $ bin/ginkgo -v -r
 * Provision using Ansible when a deployment-related file has changed:
 
   ```sh
-  $ fswatch -r ansible/**/* | xargs -I {} vagrant provision
+  $ fswatch -r $(find ansible -type f ! -iname '*.retry') | xargs -I {} vagrant provision
   ```
 
 # References

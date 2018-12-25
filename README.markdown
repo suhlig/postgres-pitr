@@ -50,6 +50,7 @@ $ bin/ginkgo -v -r
 * [anishnath](https://github.com/anishnath/postgres) describes a manual approach
 * The [Apcelent Tech Blog](https://blog.apcelent.com/using-ansible-to-set-up-postgresql.html) lists a few Ansible roles
 * Federico Campoli's [Ansible roles](https://github.com/the4thdoctor/dynamic_duo/blob/04_pgbackrest/roles/rollback/tasks/rollback_ssh.yml) are interesting
+* The `systemd` template is based on [minio-service](https://github.com/minio/minio-service/blob/master/linux-systemd/README.md )
 
 # TODO
 

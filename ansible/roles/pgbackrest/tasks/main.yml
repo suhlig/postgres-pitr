@@ -9,7 +9,7 @@
 
 - name: Config file is up to date
   template:
-    src: pgbackrest.conf.j2
+    src: local/pgbackrest.conf.j2
     dest: /etc/pgbackrest.conf
     owner: postgres
     group: postgres

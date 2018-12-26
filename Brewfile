@@ -1,5 +1,5 @@
 brew "ansible"
-brew "fswatch"
+brew "entr"
 brew "golang"
 brew "ruby"
 brew "tmux"

@@ -13,4 +13,5 @@ db:
 
 pgbackrest:
   stanza: pitr
-  archive_type: s3 # local or s3; default: local
+  archive_type: minio # local, s3 or minio; default: local
+  s3_bucket: postgres-pitr

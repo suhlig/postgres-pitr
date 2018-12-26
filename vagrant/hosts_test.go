@@ -1,15 +1,26 @@
 package vagrant_test
 
 import (
+	"github.com/mikkeloscar/sshconfig"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/suhlig/postgres-pitr/vagrant"
 )
 
 var _ = Describe("Vagrant Hosts", func() {
-	It("has at least one host", func() {
-		hosts, err := vagrant.Hosts()
+	var hosts map[string]*sshconfig.SSHHost
+	var err error
+
+	BeforeEach(func() {
+		hosts, err = vagrant.Hosts()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(len(hosts)).To(BeNumerically(">=", 1), "Expect exactly one host, but found %d", len(hosts))
+	})
+
+	It("has at least one host", func() {
+		Expect(hosts).ToNot(BeEmpty())
+	})
+
+	It("retrieves a host by name", func() {
+		Expect(hosts["postgres"]).ToNot(BeNil())
 	})
 })

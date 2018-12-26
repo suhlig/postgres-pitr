@@ -8,32 +8,50 @@ import (
 	"github.com/mikkeloscar/sshconfig"
 )
 
-// Hosts provides the SSH configuration of Vagrant VMs
-func Hosts() ([]*sshconfig.SSHHost, error) {
+// Hosts provides the SSH configuration of Vagrant VMs, indexed by the host name
+func Hosts() (map[string]*sshconfig.SSHHost, error) {
+	result := map[string]*sshconfig.SSHHost{}
+
 	stdout, _, err := run("vagrant", "ssh-config")
+
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
 	tmpfile, err := ioutil.TempFile("", "vagrant-ssh-config")
+
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
 	configFileName := tmpfile.Name()
 	defer os.Remove(configFileName)
 
 	_, err = tmpfile.Write([]byte(stdout))
+
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
 	err = tmpfile.Close()
+
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
-	return sshconfig.ParseSSHConfig(configFileName)
+	hosts, err := sshconfig.ParseSSHConfig(configFileName)
+
+	if err != nil {
+		return result, err
+	}
+
+	for _, host := range hosts {
+		for _, hostName := range host.Host {
+			result[hostName] = host
+		}
+	}
+
+	return result, nil
 }
 
 func run(args ...string) (string, string, error) {

@@ -13,10 +13,10 @@ var _ = Describe("SSH Runner", func() {
 	BeforeEach(func() {
 		Expect(len(hosts)).To(BeNumerically(">=", 1), "Expect at least one host, but found %d", len(hosts))
 
-		host := *hosts[0]
-		Expect(host.Host).To(ContainElement("postgres"))
+		host := hosts["postgres"]
+		Expect(host).ToNot(BeNil())
 
-		dbSSH, err = dbSSH.New(host)
+		dbSSH, err = dbSSH.New(*host)
 		Expect(err).NotTo(HaveOccurred())
 	})
 

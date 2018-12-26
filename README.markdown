@@ -53,7 +53,6 @@ $ bin/ginkgo -v -r
 
 # TODO
 
-* Find VM (host) by name instead of index
 * Test archiving to S3
 * Test encryption
 * Add a VM as [Dedicated Repository Host](https://pgbackrest.org/user-guide.html#repo-host)

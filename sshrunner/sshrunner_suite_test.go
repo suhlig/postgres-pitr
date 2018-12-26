@@ -9,7 +9,7 @@ import (
 	"github.com/suhlig/postgres-pitr/vagrant"
 )
 
-var hosts []*sshconfig.SSHHost
+var hosts map[string]*sshconfig.SSHHost
 
 var _ = BeforeSuite(func() {
 	var err error

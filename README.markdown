@@ -53,8 +53,8 @@ $ bin/ginkgo -v -r
 
 # TODO
 
-* Test archiving to S3
 * Test encryption
 * Add a VM as [Dedicated Repository Host](https://pgbackrest.org/user-guide.html#repo-host)
+* Restore to a separate (read-only) host (a.k.a. [Hot Standby](https://pgbackrest.org/user-guide.html#replication/hot-standby)) and, using the restored cluster, verify that the restore works
 * Fix poor error handling in the controllers
 * Test more than the happy path

@@ -46,6 +46,19 @@
     - PostgreSQL Restarted
   become_user: postgres
 
+- name: Ansible module requirements are satisfied
+  pip:
+    name: boto3
+
+- name: S3 bucket exists
+  s3_bucket:
+    name: "{{ pgbackrest.s3_bucket }}"
+    versioning: false
+    aws_access_key: "{{ lookup('env', 'S3_ACCESS_KEY') }}"
+    aws_secret_key: "{{ lookup('env', 'S3_SECRET_KEY') }}"
+    state: present
+  when: pgbackrest.archive_type == "s3"
+
 - name: Stanza exists
   command: pgbackrest --stanza={{ pgbackrest.stanza }} stanza-create
   args:

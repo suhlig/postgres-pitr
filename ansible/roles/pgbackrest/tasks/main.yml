@@ -9,7 +9,7 @@
 
 - name: Config file is up to date
   template:
-    src: local/pgbackrest.conf.j2
+    src: "{{ pgbackrest.archive_type }}/pgbackrest.conf.j2"
     dest: /etc/pgbackrest.conf
     owner: postgres
     group: postgres
@@ -22,6 +22,7 @@
     owner: postgres
     group: postgres
     mode: 0750
+  when: pgbackrest.archive_type == "local"
 
 - name: Archiving is configured
   lineinfile:

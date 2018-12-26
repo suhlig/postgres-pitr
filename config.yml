@@ -13,3 +13,4 @@ db:
 
 pgbackrest:
   stanza: pitr
+  archive_type: s3 # local or s3; default: local

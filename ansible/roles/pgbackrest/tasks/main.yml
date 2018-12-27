@@ -51,6 +51,13 @@
   pip:
     name: boto3
 
+- name: Virtual host for the bucket is present in /etc/hosts
+  lineinfile:
+    dest: /etc/hosts
+    line: "{{ minio.host }} {{ pgbackrest.s3_bucket }}.{{ minio.domain }}"
+    state: present
+  when: pgbackrest.archive_type == "minio"
+
 - name: S3 bucket exists
   s3_bucket:
     name: "{{ pgbackrest.s3_bucket }}"
@@ -60,6 +67,7 @@
     state: present
   when: pgbackrest.archive_type == "s3"
 
+# Need to create the bucket using path-style; could not find a way yet to do it virtual-host style
 - name: S3 bucket exists
   s3_bucket:
     name: "{{ pgbackrest.s3_bucket }}"

@@ -17,6 +17,7 @@ pgbackrest:
   s3_bucket: postgres-backup # only used for s3 or minio
 
 minio:
+  domain: minio.local
   host: 192.168.71.20
   local_port: 18443
   access_key: "5AVl3QpgKTxqTBaIvtTHxL8BM4Hadm6T1bSpWeL9gX"

@@ -14,6 +14,7 @@ PermissionsStartOnly=true
 Environment=MINIO_ACCESS_KEY={{ minio.access_key }}
 Environment=MINIO_SECRET_KEY={{ minio.secret_key }}
 Environment=MINIO_HTTP_TRACE=/var/log/minio.log
+Environment=MINIO_DOMAIN={{ minio.domain }}
 
 ExecStart=/usr/local/bin/minio server --address ":443" /var/lib/minio
 

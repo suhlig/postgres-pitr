@@ -19,5 +19,5 @@ pgbackrest:
 minio:
   host: 192.168.71.20
   local_port: 18443
-  access_key: "-5AV_l3QpgKTxqTBaIvtTHxL8BM4Hadm6T1bSpWeL9g"
-  secret_key: "mJ5e-3GMUPnSaGYSlHzTmxL01Qu20ZtZdMrP8u4H9Fc"
+  access_key: "5AVl3QpgKTxqTBaIvtTHxL8BM4Hadm6T1bSpWeL9gX"
+  secret_key: "mJ5e3GMUPnSaGYSlHzTmxL01Qu20ZtZdMrP8u4H9Fc"

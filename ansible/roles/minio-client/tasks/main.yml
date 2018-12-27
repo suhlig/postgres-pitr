@@ -1,0 +1,10 @@
+- name: Binary is present
+  get_url:
+    url: "https://dl.minio.io/client/mc/release/linux-amd64/mc"
+    dest: "/usr/local/bin/mc"
+    mode: "0755"
+  become: true
+
+- name: Connection to Minio is configured
+  command: "mc --insecure config host add minio https://{{ minio.host }} {{ minio.access_key }} {{ minio.secret_key }}"
+  become: false

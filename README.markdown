@@ -42,7 +42,7 @@ $ bin/ginkgo -v -r
 * Provision using Ansible when a deployment-related file has changed or a new one was added:
 
   ```sh
-  $ while true; do find ansible -type f ! -iname '*.retry' | entr -d vagrant provision; done
+  $ scripts/watch
   ```
 
 # References

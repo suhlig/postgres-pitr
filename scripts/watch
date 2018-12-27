@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -euo pipefail
+IFS=$'\n\t'
+
+cleanup () {
+  kill -s SIGTERM $$
+  echo Killed
+  exit 1
+}
+
+trap cleanup SIGINT SIGTERM
+
+while [ 1 ]; do
+  find ansible -type f ! -iname '*.retry' | entr -d vagrant provision
+done

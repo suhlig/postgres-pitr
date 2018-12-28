@@ -13,6 +13,14 @@ repo1-s3-key-secret={{ lookup('env', 'S3_SECRET_KEY') }}
 repo1-s3-region=eu-central-1
 repo1-retention-full=2
 repo1-retention-diff=2
+
+{% if pgbackrest.cipher_pass is defined %}
+repo1-cipher-pass={{ pgbackrest.cipher_pass }}
+repo1-cipher-type=aes-256-cbc
+{% else %}
+repo1-cipher-type=none
+{% endif %}
+
 start-fast=y
 stop-auto=y
 process-max=4

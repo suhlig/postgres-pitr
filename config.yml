@@ -16,6 +16,10 @@ pgbackrest:
   archive_type: minio # local, s3 or minio; default: local
   s3_bucket: postgres-backup # only used for s3 or minio
 
+  # If present, encryption is configured according to
+  # https://pgbackrest.org/user-guide.html#quickstart/configure-encryption
+  cipher_pass: "FNqDM9S6zbroiFY50Y94uNPYgOYXRvkE6RA/jmoPxj3wbn9wWNhUSahQ0nlf9ItH"
+
 minio:
   domain: minio.local
   host: 192.168.71.20

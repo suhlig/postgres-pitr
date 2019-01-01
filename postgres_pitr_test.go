@@ -95,10 +95,6 @@ var _ = Describe("a PostgreSQL cluster", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		// AfterEach(func() {
-		// 	forceRestore(masterPgBackRest, masterCluster, config.PgBackRest.Stanza)
-		// })
-
 		It("has info about the most recent backup", func() {
 			infos, err := masterPgBackRest.Info(config.PgBackRest.Stanza)
 			Expect(err).NotTo(HaveOccurred())

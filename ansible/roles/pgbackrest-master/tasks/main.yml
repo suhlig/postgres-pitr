@@ -43,10 +43,6 @@
 
 - name: Stanza exists
   command: pgbackrest --stanza={{ pgbackrest.stanza }} stanza-create
-  args:
-    creates:
-      - /var/lib/pgbackrest/archive/{{ pgbackrest.stanza }}/archive.info
-      - /var/lib/pgbackrest/backup/{{ pgbackrest.stanza }}/backup.info
   become_user: postgres
 
 - name: Stanza is valid

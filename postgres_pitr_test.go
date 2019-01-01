@@ -360,8 +360,7 @@ var _ = Describe("a PostgreSQL cluster", func() {
 					By("checking that the important data exists", func() {
 						Eventually(func() string {
 							var message string
-							err = standbyDB.QueryRow("select message from important_table").Scan(&message)
-							// Expect(err).NotTo(HaveOccurred())
+							standbyDB.QueryRow("select message from important_table").Scan(&message)
 							return message
 						}, "20s", "1s").Should(Equal("Important Data"))
 					})

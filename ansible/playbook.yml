@@ -1,8 +1,12 @@
-- hosts: databases
+- hosts: db-masters
   become: true
-
   vars_files:
     - ../config.yml
+  roles:
+    - common
+    - postgres
+    - minio-client
+    - pgbackrest-master
 
   roles:
     - common

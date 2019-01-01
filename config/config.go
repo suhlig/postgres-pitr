@@ -8,7 +8,7 @@ import (
 )
 
 type Config struct {
-	DB struct {
+	Master struct {
 		Version     string
 		ClusterName string `yaml:"cluster_name"`
 		Host        string
@@ -35,7 +35,7 @@ type Config struct {
 // FromFile creates a new Config struct from the given path to the config file
 func (cfg Config) FromFile(path string) (Config, error) {
 	cfg = Config{}
-	cfg.DB.Port = 5432
+	cfg.Master.Port = 5432
 	cfg.Minio.Port = 443
 
 	yamlFile, err := ioutil.ReadFile(path)
@@ -51,5 +51,5 @@ func (cfg Config) FromFile(path string) (Config, error) {
 
 // DatabaseURL returns the URL to access the database
 func (cfg Config) DatabaseURL() (string, error) {
-	return fmt.Sprintf("postgres://%s:%s@localhost:%d/%s", cfg.DB.User, cfg.DB.Password, cfg.DB.LocalPort, cfg.DB.Name), nil
+	return fmt.Sprintf("postgres://%s:%s@localhost:%d/%s", cfg.Master.User, cfg.Master.Password, cfg.Master.LocalPort, cfg.Master.Name), nil
 }

@@ -21,6 +21,6 @@ var _ = Describe("Vagrant Hosts", func() {
 	})
 
 	It("retrieves a host by name", func() {
-		Expect(hosts["postgres"]).ToNot(BeNil())
+		Expect(hosts["master"]).ToNot(BeNil())
 	})
 })

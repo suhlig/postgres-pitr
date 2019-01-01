@@ -13,8 +13,8 @@
 - name: Program is installed
   apt:
     name:
-      - "postgresql-{{ db.version }}"
-      - "postgresql-contrib-{{ db.version }}"
+      - "postgresql-{{ master.version }}"
+      - "postgresql-contrib-{{ master.version }}"
       - libpq-dev
       - python3-psycopg2
     state: present
@@ -27,7 +27,7 @@
 
 - name: Database exists
   postgresql_db:
-    name: "{{ db.name }}"
+    name: "{{ master.name }}"
     encoding: UTF-8
     lc_collate: en_US.UTF-8
     lc_ctype: en_US.UTF-8
@@ -37,23 +37,23 @@
 
 - name: User has access to the database
   postgresql_user:
-    db: "{{ db.name }}"
-    name: "{{ db.user }}"
-    password: "{{ db.password }}"
+    db: "{{ master.name }}"
+    name: "{{ master.user }}"
+    password: "{{ master.password }}"
     priv: ALL
     state: present
   become_user: postgres
 
 - name: User does not have unnecessary privileges
   postgresql_user:
-    name: "{{ db.user }}"
+    name: "{{ master.user }}"
     role_attr_flags: NOSUPERUSER,NOCREATEDB
     state: present
   become_user: postgres
 
 - name: Allow authenticated connections from 10.0.0.0
   lineinfile:
-    path: "/etc/postgresql/{{ db.version }}/{{ db.cluster_name }}/pg_hba.conf"
+    path: "/etc/postgresql/{{ master.version }}/{{ master.cluster_name }}/pg_hba.conf"
     regexp: '^host all all 10.0.0.0'
     line: "host all all 10.0.0.0/8 md5"
   notify:
@@ -62,9 +62,18 @@
 
 - name: Listen on all interfaces
   lineinfile:
-    path: "/etc/postgresql/{{ db.version }}/{{ db.cluster_name }}/postgresql.conf"
+    path: "/etc/postgresql/{{ master.version }}/{{ master.cluster_name }}/postgresql.conf"
     regexp: '^listen_addresses'
     line: "listen_addresses = '*'"
+  notify:
+    - PostgreSQL Restarted
+  become_user: postgres
+
+- name: Log all SQL statements
+  lineinfile:
+    path: "/etc/postgresql/{{ master.version }}/{{ master.cluster_name }}/postgresql.conf"
+    regexp: '^log_statement'
+    line: "log_statement = 'all'"
   notify:
     - PostgreSQL Restarted
   become_user: postgres

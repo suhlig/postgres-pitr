@@ -8,42 +8,42 @@ module PITR
     class Base
       attr_reader :config
 
-      def initialize(path)
-        @config = YAML.load_file(path)
+      def initialize(path, key)
+        @config = YAML.load_file(path).fetch(key)
       end
     end
 
     class DB < Base
       def user
-        db.fetch('user')
+        config.fetch('user')
       end
 
       def host
-        db.fetch('host')
+        config.fetch('host')
       end
 
       def local_port
-        db.fetch('local_port', port)
+        config.fetch('local_port', port)
       end
 
       def port
-        db.fetch('port', URI::Postgres::DEFAULT_PORT)
+        config.fetch('port', URI::Postgres::DEFAULT_PORT)
       end
 
       def name
-        db.fetch('name')
+        config.fetch('name')
       end
 
       def version
-        db.fetch('version')
+        config.fetch('version')
       end
 
       def password
-        db.fetch('password')
+        config.fetch('password')
       end
 
       def params
-        db.fetch('params', {})
+        config.fetch('params', {})
       end
 
       def url
@@ -55,10 +55,6 @@ module PITR
       end
 
       private
-
-      def db
-        config.fetch('db')
-      end
 
       def components(host, port)
         {
@@ -76,31 +72,25 @@ module PITR
       end
     end
 
-    class Minio < Base
+    class Blobstore < Base
       def host
-        minio.fetch('host')
+        config.fetch('host')
       end
 
       def local_port
-        minio.fetch('local_port')
+        config.fetch('local_port')
       end
 
       def port
-        minio.fetch('port', 443)
+        config.fetch('port', 443)
       end
 
       def access_key
-        minio.fetch('access_key')
+        config.fetch('access_key')
       end
 
       def secret_key
-        minio.fetch('secret_key')
-      end
-
-      private
-
-      def minio
-        config.fetch('minio')
+        config.fetch('secret_key')
       end
     end
   end

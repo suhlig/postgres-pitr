@@ -19,13 +19,13 @@ var _ = Describe("Config", func() {
 	Context("Configuration file contains an entry", func() {
 		Context("for the cluster", func() {
 			It("has the configured server version", func() {
-				Expect(config.DB.Version).ToNot(BeEmpty())
-				Expect(config.DB.Version).To(Equal("11"))
+				Expect(config.Master.Version).ToNot(BeEmpty())
+				Expect(config.Master.Version).To(Equal("11"))
 			})
 
 			It("has the configured cluster name", func() {
-				Expect(config.DB.ClusterName).ToNot(BeEmpty())
-				Expect(config.DB.ClusterName).To(Equal("main"))
+				Expect(config.Master.ClusterName).ToNot(BeEmpty())
+				Expect(config.Master.ClusterName).To(Equal("main"))
 			})
 		})
 

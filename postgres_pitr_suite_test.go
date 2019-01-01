@@ -16,7 +16,7 @@ var _ = BeforeSuite(func() {
 	hosts, err := vagrant.Hosts()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(hosts).ToNot(BeEmpty())
-	postgresHost = *hosts["postgres"]
+	postgresHost = *hosts["master"]
 })
 
 func TestPostgresPitr(t *testing.T) {

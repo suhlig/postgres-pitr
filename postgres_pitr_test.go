@@ -86,7 +86,7 @@ var _ = Describe("a PostgreSQL cluster", func() {
 			ssh, err = ssh.New(postgresHost)
 			Expect(err).NotTo(HaveOccurred())
 
-			clustr, err = cluster.NewController(ssh, config.DB.Version, config.DB.ClusterName)
+			clustr, err = cluster.NewController(ssh, config.Master.Version, config.Master.ClusterName)
 			Expect(err).NotTo(HaveOccurred())
 
 			pgbr, err = pgbackrest.NewController(ssh)
@@ -119,7 +119,7 @@ var _ = Describe("a PostgreSQL cluster", func() {
 				})
 
 				By("deleting the pg_control file", func() {
-					stdout, stderr, err := ssh.Run("sudo -u postgres rm --force /var/lib/postgresql/%s/%s/global/pg_control", config.DB.Version, config.DB.ClusterName)
+					stdout, stderr, err := ssh.Run("sudo -u postgres rm --force /var/lib/postgresql/%s/%s/global/pg_control", config.Master.Version, config.Master.ClusterName)
 					Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
 				})
 
@@ -190,7 +190,7 @@ var _ = Describe("a PostgreSQL cluster", func() {
 					})
 
 					By("displaying recovery.conf", func() {
-						stdout, stderr, err := ssh.Run("sudo -u postgres cat /var/lib/postgresql/%s/%s/recovery.conf", config.DB.Version, config.DB.ClusterName)
+						stdout, stderr, err := ssh.Run("sudo -u postgres cat /var/lib/postgresql/%s/%s/recovery.conf", config.Master.Version, config.Master.ClusterName)
 						println(stdout)
 						Expect(err).ToNot(HaveOccurred(), "stderr: %v\nstdout:%v\n", stderr, stdout)
 					})
@@ -237,7 +237,7 @@ var _ = Describe("a PostgreSQL cluster", func() {
 					})
 
 					By("displaying recovery.conf", func() {
-						stdout, stderr, err := ssh.Run("sudo -u postgres cat /var/lib/postgresql/%s/%s/recovery.conf", config.DB.Version, config.DB.ClusterName)
+						stdout, stderr, err := ssh.Run("sudo -u postgres cat /var/lib/postgresql/%s/%s/recovery.conf", config.Master.Version, config.Master.ClusterName)
 						println(stdout)
 						Expect(err).ToNot(HaveOccurred(), "stderr: %v\nstdout:%v\n", stderr, stdout)
 					})
@@ -292,7 +292,7 @@ var _ = Describe("a PostgreSQL cluster", func() {
 					})
 
 					By("displaying recovery.conf", func() {
-						stdout, stderr, err := ssh.Run("sudo -u postgres cat /var/lib/postgresql/%s/%s/recovery.conf", config.DB.Version, config.DB.ClusterName)
+						stdout, stderr, err := ssh.Run("sudo -u postgres cat /var/lib/postgresql/%s/%s/recovery.conf", config.Master.Version, config.Master.ClusterName)
 						println(stdout)
 						Expect(err).ToNot(HaveOccurred(), "stderr: %v\nstdout:%v\n", stderr, stdout)
 					})

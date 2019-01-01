@@ -1,4 +1,4 @@
-db:
+master: &master
   host: 192.168.71.10
   version: '11'
   cluster_name: main

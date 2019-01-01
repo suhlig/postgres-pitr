@@ -71,7 +71,6 @@ func (ctl Controller) RestoreToPIT(stanza string, pointInTime time.Time) error {
 			" --delta"+
 			" --type=time"+
 			" --target=\"%s\""+
-			" --recovery-option='recovery_target_action=promote'"+ // https://www.postgresql.org/docs/current/recovery-target-settings.html
 			" restore",
 		stanza,
 		fmt.Sprintf((pointInTime.Format(time.RFC3339Nano))),
@@ -92,7 +91,6 @@ func (ctl Controller) RestoreToSavePoint(stanza string, savePoint string) error 
 			" --delta"+
 			" --type=name"+
 			" --target=\"%s\""+
-			" --recovery-option='recovery_target_action=promote'"+
 			" restore",
 		stanza,
 		savePoint,
@@ -113,7 +111,6 @@ func (ctl Controller) RestoreToTransactionId(stanza string, txId int64) error {
 			" --delta"+
 			" --type=xid"+
 			" --target=\"%d\""+
-			" --recovery-option='recovery_target_action=promote'"+
 			" restore",
 		stanza,
 		txId,

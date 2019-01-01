@@ -55,7 +55,6 @@ $ bin/ginkgo -v -r
 # TODO
 
 * Try to get rid of port forwarding by connecting to postgres via the 192.168.*.* network instead. Needs a different allow statement in postgres config.
-* Move `--recovery-option='recovery_target_action=promote'` from controller to `pgbackrest.conf`
 * Do not rely on the `main` cluster, but create a separate one (`sudo pg_createcluster 9.4 demo` etc.)
 * Run `pg_create_restore_point` through native DB driver instead of SSH
 * Fix poor error handling in the controllers

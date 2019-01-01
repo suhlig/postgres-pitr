@@ -2,6 +2,7 @@
   require 'shellwords'
   require_relative 'lib/pitr/config'
   master = PITR::Config::DB.new('config.yml', 'master')
+  standby = PITR::Config::DB.new(Pathname(__dir__) / 'config.yml', 'standby')
 %>
 
 name: <%= File.basename(Dir.pwd) %>
@@ -13,14 +14,19 @@ windows:
   - tests:
       layout: tiled
       panes:
+        - vagrant ssh master -c 'sudo -u postgres tail -f /var/log/postgresql/postgresql-<%= master.version %>-main.log'
+        - vagrant ssh standby -c 'sudo -u postgres tail -f /var/log/postgresql/postgresql-<%= master.version %>-main.log'
         - bin/ginkgo -v -r; bin/ginkgo watch -v -r
-        - vagrant ssh master -c 'sudo -u postgres tail -f /var/log/postgresql/postgresql-<%= db.version %>-main.log'
-        -
 
   - master:
       panes:
-        - psql <%= Shellwords.escape(db.local_url) %>
+        - psql <%= Shellwords.escape(master.local_url) %>
         - vagrant ssh master
+
+  - standby:
+      panes:
+        - psql <%= Shellwords.escape(standby.local_url) %>
+        - vagrant ssh standby
 
   - minio:
       panes:

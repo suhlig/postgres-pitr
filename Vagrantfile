@@ -2,6 +2,7 @@ require_relative 'lib/pitr/config'
 require 'pathname'
 
 master = PITR::Config::DB.new(Pathname(__dir__) / 'config.yml', 'master')
+standby = PITR::Config::DB.new(Pathname(__dir__) / 'config.yml', 'standby')
 minio = PITR::Config::Blobstore.new(Pathname(__dir__) / 'config.yml', 'minio')
 
 Vagrant.configure('2') do |config|
@@ -22,6 +23,12 @@ Vagrant.configure('2') do |config|
     cfg.vm.network 'forwarded_port', guest: master.port, host: master.local_port
     cfg.vm.post_up_message = "PostgreSQL available at #{master.local_url}"
   end
+
+  config.vm.define 'standby' do |cfg|
+    cfg.vm.hostname = 'standby'
+    cfg.vm.network 'private_network', ip: standby.host
+    cfg.vm.network 'forwarded_port', guest: standby.port, host: standby.local_port
+    cfg.vm.post_up_message = "PostgreSQL hot standby available at #{standby.local_url}"
   end
 
   config.vm.provision 'ansible' do |ansbl|
@@ -32,6 +39,7 @@ Vagrant.configure('2') do |config|
     }
     ansbl.groups = {
       'db-masters' => ['master'],
+      'db-standbys' => ['standby'],
       'blobstores' => ['minio'],
     }
   end

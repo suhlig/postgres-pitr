@@ -17,15 +17,35 @@ var _ = Describe("Config", func() {
 	})
 
 	Context("Configuration file contains an entry", func() {
-		Context("for the cluster", func() {
+		Context("for the master cluster", func() {
 			It("has the configured server version", func() {
 				Expect(config.Master.Version).ToNot(BeEmpty())
 				Expect(config.Master.Version).To(Equal("11"))
 			})
 
-			It("has the configured cluster name", func() {
+			It("has the configured master cluster name", func() {
 				Expect(config.Master.ClusterName).ToNot(BeEmpty())
 				Expect(config.Master.ClusterName).To(Equal("main"))
+			})
+
+			It("has the database URL", func() {
+				Expect(config.MasterDatabaseURL()).To(Equal("postgres://foobar:9Gp0efB5VYBdeOu-TnbTb5VqjnsLFXw7rUV55SidDk8@localhost:15432/sandbox"))
+			})
+		})
+
+		Context("for the standby cluster", func() {
+			It("has the configured server version", func() {
+				Expect(config.Standby.Version).ToNot(BeEmpty())
+				Expect(config.Standby.Version).To(Equal("11"))
+			})
+
+			It("has the configured standby cluster name", func() {
+				Expect(config.Standby.ClusterName).ToNot(BeEmpty())
+				Expect(config.Standby.ClusterName).To(Equal("main"))
+			})
+
+			It("has the database URL", func() {
+				Expect(config.StandbyDatabaseURL()).To(Equal("postgres://foobar:9Gp0efB5VYBdeOu-TnbTb5VqjnsLFXw7rUV55SidDk8@localhost:16432/sandbox"))
 			})
 		})
 

@@ -19,6 +19,17 @@ type Config struct {
 		Password    string
 	}
 
+	Standby struct {
+		Version     string
+		ClusterName string `yaml:"cluster_name"`
+		Host        string
+		Port        int
+		LocalPort   int `yaml:"local_port"`
+		Name        string
+		User        string
+		Password    string
+	}
+
 	PgBackRest struct {
 		Stanza string
 	}
@@ -49,7 +60,12 @@ func (cfg Config) FromFile(path string) (Config, error) {
 	return cfg, err
 }
 
-// DatabaseURL returns the URL to access the database
-func (cfg Config) DatabaseURL() (string, error) {
+// MasterDatabaseURL returns the URL to access the database on the master node
+func (cfg Config) MasterDatabaseURL() (string, error) {
 	return fmt.Sprintf("postgres://%s:%s@localhost:%d/%s", cfg.Master.User, cfg.Master.Password, cfg.Master.LocalPort, cfg.Master.Name), nil
+}
+
+// StandbyDatabaseURL returns the URL to access the database on the standby node
+func (cfg Config) StandbyDatabaseURL() (string, error) {
+	return fmt.Sprintf("postgres://%s:%s@localhost:%d/%s", cfg.Standby.User, cfg.Standby.Password, cfg.Standby.LocalPort, cfg.Standby.Name), nil
 }

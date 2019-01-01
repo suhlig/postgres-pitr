@@ -1,0 +1,38 @@
+- name: Program is installed
+  apt:
+    name:
+      - pgbackrest
+      - libdbd-pg-perl
+      - libio-socket-ssl-perl
+      - libxml-libxml-perl
+      - python3-pip
+    state: present
+
+- name: Config file is up to date
+  template:
+    src: "minio/pgbackrest.conf.j2"
+    dest: /etc/pgbackrest.conf
+    owner: postgres
+    group: postgres
+    mode: 0644
+
+- name: Repository is present
+  file:
+    path: /var/lib/pgbackrest
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: 0750
+  when: pgbackrest.archive_type == "local"
+
+- name: Hot standby is configured
+  lineinfile:
+    path: "/etc/postgresql/{{ standby.version }}/{{ standby.cluster_name }}/postgresql.conf"
+    line: "hot_standby = on"
+    regexp: '^hot_standby'
+  notify:
+    - PostgreSQL Restarted
+  become_user: postgres
+
+- name: PostgreSQL is restarted
+  meta: flush_handlers

@@ -8,18 +8,20 @@
     - minio-client
     - pgbackrest-master
 
+- hosts: db-standbys
+  become: true
+  vars_files:
+    - ../config.yml
   roles:
     - common
     - postgres
-    - pgbackrest
     - minio-client
+    - pgbackrest-standby
 
 - hosts: blobstores
   become: true
-
   vars_files:
     - ../config.yml
-
   roles:
     - common
     - minio

@@ -8,3 +8,42 @@
 - name: Connection to Minio is configured
   command: "mc --insecure config host add minio https://{{ minio.host }} {{ minio.access_key }} {{ minio.secret_key }}"
   become: false
+
+- name: Python PIP is installed
+  apt:
+    name: python3-pip
+    state: present
+
+- name: Ansible module requirements are satisfied
+  pip:
+    name: boto3
+
+- name: Virtual host for the bucket is present in /etc/hosts
+  lineinfile:
+    dest: /etc/hosts
+    line: "{{ minio.host }} {{ pgbackrest.s3_bucket }}.{{ minio.domain }}"
+    state: present
+  when: pgbackrest.archive_type == "minio"
+
+- name: S3 bucket exists
+  s3_bucket:
+    name: "{{ pgbackrest.s3_bucket }}"
+    versioning: false
+    aws_access_key: "{{ lookup('env', 'S3_ACCESS_KEY') }}"
+    aws_secret_key: "{{ lookup('env', 'S3_SECRET_KEY') }}"
+    state: present
+  when: pgbackrest.archive_type == "s3"
+
+# Need to create the bucket using path-style; could not find a way yet to do it virtual-host style
+- name: S3 bucket exists
+  s3_bucket:
+    name: "{{ pgbackrest.s3_bucket }}"
+    versioning: false
+    s3_url: "https://{{ minio.host }}"
+    aws_access_key: "{{ minio.access_key }}"
+    aws_secret_key: "{{ minio.secret_key }}"
+    validate_certs: false
+    ceph: true # https://github.com/ansible/ansible/issues/27099
+    state: present
+  ignore_errors: true # https://github.com/ansible/ansible/issues/42501
+  when: pgbackrest.archive_type == "minio"

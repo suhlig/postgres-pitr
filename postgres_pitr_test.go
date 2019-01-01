@@ -53,54 +53,54 @@ var _ = Describe("a PostgreSQL cluster", func() {
 	})
 
 	Context("Database URL exists", func() {
-		var url string
-		var db *sql.DB
+		var masterURL string
+		var masterDB *sql.DB
 
 		BeforeEach(func() {
-			url, err = config.DatabaseURL()
+			masterURL, err = config.MasterDatabaseURL()
 			Expect(err).NotTo(HaveOccurred())
 
-			db, err = sql.Open("postgres", url)
+			masterDB, err = sql.Open("postgres", masterURL)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("can be pinged", func() {
-			err = db.Ping()
+			err = masterDB.Ping()
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("has the expected server version", func() {
 			var version int
-			err = db.QueryRow("SHOW server_version_num;").Scan(&version)
+			err = masterDB.QueryRow("SHOW server_version_num;").Scan(&version)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(version).To(BeNumerically(">=", 110000))
 		})
 	})
 
 	Context("with at least one base backup", func() {
-		var ssh *sshrunner.Runner
-		var pgbr pgbackrest.Controller
-		var clustr cluster.Controller
+		var masterSSH *sshrunner.Runner
+		var masterPgBackRest pgbackrest.Controller
+		var masterCluster cluster.Controller
 
 		BeforeEach(func() {
-			ssh, err = ssh.New(postgresHost)
+			masterSSH, err = masterSSH.New(masterHost)
 			Expect(err).NotTo(HaveOccurred())
 
-			clustr, err = cluster.NewController(ssh, config.Master.Version, config.Master.ClusterName)
+			masterCluster, err = cluster.NewController(masterSSH, config.Master.Version, config.Master.ClusterName)
 			Expect(err).NotTo(HaveOccurred())
 
-			pgbr, err = pgbackrest.NewController(ssh)
+			masterPgBackRest, err = pgbackrest.NewController(masterSSH)
 			Expect(err).NotTo(HaveOccurred())
-			err = pgbr.Backup(config.PgBackRest.Stanza)
+			err = masterPgBackRest.Backup(config.PgBackRest.Stanza)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		AfterEach(func() {
-			forceRestore(pgbr, clustr, config.PgBackRest.Stanza)
-		})
+		// AfterEach(func() {
+		// 	forceRestore(masterPgBackRest, masterCluster, config.PgBackRest.Stanza)
+		// })
 
 		It("has info about the most recent backup", func() {
-			infos, err := pgbr.Info(config.PgBackRest.Stanza)
+			infos, err := masterPgBackRest.Info(config.PgBackRest.Stanza)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(infos).To(HaveLen(1))
@@ -114,32 +114,32 @@ var _ = Describe("a PostgreSQL cluster", func() {
 		When("an important file is lost", func() {
 			It("restores the cluster", func() {
 				By("stopping the cluster", func() {
-					err = clustr.Stop()
+					err = masterCluster.Stop()
 					Expect(err).NotTo(HaveOccurred())
 				})
 
 				By("deleting the pg_control file", func() {
-					stdout, stderr, err := ssh.Run("sudo -u postgres rm --force /var/lib/postgresql/%s/%s/global/pg_control", config.Master.Version, config.Master.ClusterName)
+					stdout, stderr, err := masterSSH.Run("sudo -u postgres rm --force /var/lib/postgresql/%s/%s/global/pg_control", config.Master.Version, config.Master.ClusterName)
 					Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
 				})
 
 				By("attempting to start the cluster again", func() {
-					err = clustr.Start()
+					err = masterCluster.Start()
 					Expect(err).To(HaveOccurred())
 				})
 
 				By("removing all files from the PostgreSQL data directory", func() {
-					err = clustr.Clear()
+					err = masterCluster.Clear()
 					Expect(err).ToNot(HaveOccurred())
 				})
 
 				By("restoring the backup", func() {
-					err = pgbr.Restore(config.PgBackRest.Stanza)
+					err = masterPgBackRest.Restore(config.PgBackRest.Stanza)
 					Expect(err).NotTo(HaveOccurred())
 				})
 
 				By("starting the cluster", func() {
-					err = clustr.Start()
+					err = masterCluster.Start()
 					Expect(err).NotTo(HaveOccurred())
 				})
 			})
@@ -147,20 +147,20 @@ var _ = Describe("a PostgreSQL cluster", func() {
 
 		// https://pgbackrest.org/user-guide.html#pitr
 		Context("important data exists", func() {
-			var url string
-			var db *sql.DB
+			var masterURL string
+			var masterDB *sql.DB
 
 			BeforeEach(func() {
-				url, err = config.DatabaseURL()
+				masterURL, err = config.MasterDatabaseURL()
 				Expect(err).NotTo(HaveOccurred())
 
-				db, err = sql.Open("postgres", url)
+				masterDB, err = sql.Open("postgres", masterURL)
 				Expect(err).NotTo(HaveOccurred())
 
-				_, err := db.Exec("create table IF NOT EXISTS important_table (message text)")
+				_, err := masterDB.Exec("create table IF NOT EXISTS important_table (message text)")
 				Expect(err).NotTo(HaveOccurred())
 
-				_, err = db.Exec("insert into important_table values ($1)", "Important Data")
+				_, err = masterDB.Exec("insert into important_table values ($1)", "Important Data")
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -168,41 +168,41 @@ var _ = Describe("a PostgreSQL cluster", func() {
 				var backupPointInTime time.Time
 
 				BeforeEach(func() {
-					err = db.QueryRow("select current_timestamp").Scan(&backupPointInTime)
+					err = masterDB.QueryRow("select current_timestamp").Scan(&backupPointInTime)
 					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("can be restored to the given point in time", func() {
 					By("dropping the important table", func() {
-						_, err := db.Exec("drop table important_table")
+						_, err := masterDB.Exec("drop table important_table")
 						Expect(err).NotTo(HaveOccurred())
 					})
 
 					By(fmt.Sprintf("restoring the cluster to the point in time when the data was good: %v", backupPointInTime), func() {
-						err = clustr.Stop()
+						err = masterCluster.Stop()
 						Expect(err).NotTo(HaveOccurred())
 
-						err := clustr.Clear()
+						err := masterCluster.Clear()
 						Expect(err).NotTo(HaveOccurred())
 
-						err = pgbr.RestoreToPIT(config.PgBackRest.Stanza, backupPointInTime)
+						err = masterPgBackRest.RestoreToPIT(config.PgBackRest.Stanza, backupPointInTime)
 						Expect(err).NotTo(HaveOccurred())
 					})
 
 					By("displaying recovery.conf", func() {
-						stdout, stderr, err := ssh.Run("sudo -u postgres cat /var/lib/postgresql/%s/%s/recovery.conf", config.Master.Version, config.Master.ClusterName)
+						stdout, stderr, err := masterSSH.Run("sudo -u postgres cat /var/lib/postgresql/%s/%s/recovery.conf", config.Master.Version, config.Master.ClusterName)
 						println(stdout)
 						Expect(err).ToNot(HaveOccurred(), "stderr: %v\nstdout:%v\n", stderr, stdout)
 					})
 
 					By("starting the cluster", func() {
-						err = clustr.Start()
+						err = masterCluster.Start()
 						Expect(err).NotTo(HaveOccurred())
 					})
 
-					By("Check that the important table exists", func() {
+					By("checking that the important data exists", func() {
 						var message string
-						err = db.QueryRow("select message from important_table").Scan(&message)
+						err = masterDB.QueryRow("select message from important_table").Scan(&message)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(message).To(Equal("Important Data"))
 					})
@@ -215,41 +215,41 @@ var _ = Describe("a PostgreSQL cluster", func() {
 				BeforeEach(func() {
 					savePoint = randomName()
 
-					stdout, stderr, err := ssh.Run("sudo -u postgres psql -c \"select pg_create_restore_point('%s')\"", savePoint)
+					stdout, stderr, err := masterSSH.Run("sudo -u postgres psql -c \"select pg_create_restore_point('%s')\"", savePoint)
 					Expect(err).ToNot(HaveOccurred(), "stderr: %v\nstdout:%v\n", stderr, stdout)
 				})
 
 				It("can be restored to the given savepoint", func() {
 					By("dropping the important table", func() {
-						_, err := db.Exec("drop table important_table")
+						_, err := masterDB.Exec("drop table important_table")
 						Expect(err).NotTo(HaveOccurred())
 					})
 
 					By(fmt.Sprintf("restoring the cluster to the savepoint when the data was good: %v", savePoint), func() {
-						err = clustr.Stop()
+						err = masterCluster.Stop()
 						Expect(err).NotTo(HaveOccurred())
 
-						err := clustr.Clear()
+						err := masterCluster.Clear()
 						Expect(err).NotTo(HaveOccurred())
 
-						err = pgbr.RestoreToSavePoint(config.PgBackRest.Stanza, savePoint)
+						err = masterPgBackRest.RestoreToSavePoint(config.PgBackRest.Stanza, savePoint)
 						Expect(err).NotTo(HaveOccurred())
 					})
 
 					By("displaying recovery.conf", func() {
-						stdout, stderr, err := ssh.Run("sudo -u postgres cat /var/lib/postgresql/%s/%s/recovery.conf", config.Master.Version, config.Master.ClusterName)
+						stdout, stderr, err := masterSSH.Run("sudo -u postgres cat /var/lib/postgresql/%s/%s/recovery.conf", config.Master.Version, config.Master.ClusterName)
 						println(stdout)
 						Expect(err).ToNot(HaveOccurred(), "stderr: %v\nstdout:%v\n", stderr, stdout)
 					})
 
 					By("starting the cluster", func() {
-						err = clustr.Start()
+						err = masterCluster.Start()
 						Expect(err).NotTo(HaveOccurred())
 					})
 
-					By("Check that the important table exists", func() {
+					By("checking that the important data exists", func() {
 						var message string
-						err = db.QueryRow("select message from important_table").Scan(&message)
+						err = masterDB.QueryRow("select message from important_table").Scan(&message)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(message).To(Equal("Important Data"))
 					})
@@ -260,7 +260,7 @@ var _ = Describe("a PostgreSQL cluster", func() {
 				var txId int64
 
 				BeforeEach(func() {
-					tx, err := db.Begin()
+					tx, err := masterDB.Begin()
 					Expect(err).NotTo(HaveOccurred())
 
 					err = tx.QueryRow("select txid_current()").Scan(&txId)
@@ -276,37 +276,94 @@ var _ = Describe("a PostgreSQL cluster", func() {
 
 				It("can be restored to the given transaction id", func() {
 					By("dropping the important table", func() {
-						_, err := db.Exec("drop table important_table")
+						_, err := masterDB.Exec("drop table important_table")
 						Expect(err).NotTo(HaveOccurred())
 					})
 
 					By(fmt.Sprintf("restoring the cluster to the transaction id when the data was good: %v", txId), func() {
-						err = clustr.Stop()
+						err = masterCluster.Stop()
 						Expect(err).NotTo(HaveOccurred())
 
-						err := clustr.Clear()
+						err := masterCluster.Clear()
 						Expect(err).NotTo(HaveOccurred())
 
-						err = pgbr.RestoreToTransactionId(config.PgBackRest.Stanza, txId)
+						err = masterPgBackRest.RestoreToTransactionId(config.PgBackRest.Stanza, txId)
 						Expect(err).NotTo(HaveOccurred())
 					})
 
 					By("displaying recovery.conf", func() {
-						stdout, stderr, err := ssh.Run("sudo -u postgres cat /var/lib/postgresql/%s/%s/recovery.conf", config.Master.Version, config.Master.ClusterName)
+						stdout, stderr, err := masterSSH.Run("sudo -u postgres cat /var/lib/postgresql/%s/%s/recovery.conf", config.Master.Version, config.Master.ClusterName)
 						println(stdout)
 						Expect(err).ToNot(HaveOccurred(), "stderr: %v\nstdout:%v\n", stderr, stdout)
 					})
 
 					By("starting the cluster", func() {
-						err = clustr.Start()
+						err = masterCluster.Start()
 						Expect(err).NotTo(HaveOccurred())
 					})
 
-					By("Check that the important table exists", func() {
+					By("checking that the important data exists", func() {
 						var message string
-						err = db.QueryRow("select message from important_table").Scan(&message)
+						err = masterDB.QueryRow("select message from important_table").Scan(&message)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(message).To(Equal("Important Data"))
+					})
+				})
+			})
+
+			// https://pgbackrest.org/user-guide.html#replication/hot-standby
+			Context("a hot standby is restored from scratch", func() {
+				var standbySSH *sshrunner.Runner
+				var standbyPgBackRest pgbackrest.Controller
+				var standbyCluster cluster.Controller
+				var standbyURL string
+				var standbyDB *sql.DB
+
+				BeforeEach(func() {
+					standbySSH, err = standbySSH.New(standbyHost)
+					Expect(err).NotTo(HaveOccurred())
+
+					standbyCluster, err = cluster.NewController(standbySSH, config.Standby.Version, config.Standby.ClusterName)
+					Expect(err).NotTo(HaveOccurred())
+
+					standbyPgBackRest, err = pgbackrest.NewController(standbySSH)
+					Expect(err).NotTo(HaveOccurred())
+
+					standbyURL, err = config.StandbyDatabaseURL()
+					Expect(err).NotTo(HaveOccurred())
+
+					standbyDB, err = sql.Open("postgres", standbyURL)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("provides the important information", func() {
+					By("stopping the cluster", func() {
+						err = standbyCluster.Stop()
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					By("removing all files from the PostgreSQL data directory", func() {
+						err = standbyCluster.Clear()
+						Expect(err).ToNot(HaveOccurred())
+					})
+
+					By("restoring the backup", func() {
+						err = standbyPgBackRest.Restore(config.PgBackRest.Stanza)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					By("starting the cluster", func() {
+						err = standbyCluster.Start()
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					By("checking that the important data exists", func() {
+						Eventually(func() string {
+							var message string
+							err = standbyDB.QueryRow("select message from important_table").Scan(&message)
+							// Expect(err).NotTo(HaveOccurred())
+							return message
+						}, "20s", "1s").Should(Equal("Important Data"))
 					})
 				})
 			})

@@ -54,7 +54,7 @@ func (ctl Controller) Backup(stanza string) error {
 
 // Restore a backup for the given stanza
 func (ctl Controller) Restore(stanza string) error {
-	stdout, stderr, err := ctl.Runner.Run("sudo -u postgres pgbackrest --stanza=%s restore", stanza)
+	stdout, stderr, err := ctl.Runner.Run("sudo -u postgres pgbackrest --stanza=%s --delta restore", stanza)
 
 	if err != nil {
 		return fmt.Errorf("Error: %v\nstderr:\n%v\nstdout:\n%v\n", err, stdout, stderr)

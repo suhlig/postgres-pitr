@@ -16,21 +16,6 @@ import (
 	"github.com/suhlig/postgres-pitr/sshrunner"
 )
 
-// Quickly restore from a backup
-// This may also be useful to run as one-off in a Before function
-func forceRestore(pgbr pgbackrest.Controller, clustr cluster.Controller, stanza string) {
-	clustr.Stop()
-
-	err := clustr.Clear()
-	Expect(err).NotTo(HaveOccurred())
-
-	err = pgbr.Restore(stanza)
-	Expect(err).NotTo(HaveOccurred())
-
-	err = clustr.Start()
-	Expect(err).NotTo(HaveOccurred())
-}
-
 func randomName() string {
 	chars := []rune("abcdefghijklmnopqrstuvwxyz0123456789")
 	length := 16
@@ -124,11 +109,6 @@ var _ = Describe("a PostgreSQL cluster", func() {
 					Expect(err).To(HaveOccurred())
 				})
 
-				By("removing all files from the PostgreSQL data directory", func() {
-					err = masterCluster.Clear()
-					Expect(err).ToNot(HaveOccurred())
-				})
-
 				By("restoring the backup", func() {
 					err = masterPgBackRest.Restore(config.PgBackRest.Stanza)
 					Expect(err).NotTo(HaveOccurred())
@@ -178,9 +158,6 @@ var _ = Describe("a PostgreSQL cluster", func() {
 						err = masterCluster.Stop()
 						Expect(err).NotTo(HaveOccurred())
 
-						err := masterCluster.Clear()
-						Expect(err).NotTo(HaveOccurred())
-
 						err = masterPgBackRest.RestoreToPIT(config.PgBackRest.Stanza, backupPointInTime)
 						Expect(err).NotTo(HaveOccurred())
 					})
@@ -223,9 +200,6 @@ var _ = Describe("a PostgreSQL cluster", func() {
 
 					By(fmt.Sprintf("restoring the cluster to the savepoint when the data was good: %v", savePoint), func() {
 						err = masterCluster.Stop()
-						Expect(err).NotTo(HaveOccurred())
-
-						err := masterCluster.Clear()
 						Expect(err).NotTo(HaveOccurred())
 
 						err = masterPgBackRest.RestoreToSavePoint(config.PgBackRest.Stanza, savePoint)
@@ -280,9 +254,6 @@ var _ = Describe("a PostgreSQL cluster", func() {
 						err = masterCluster.Stop()
 						Expect(err).NotTo(HaveOccurred())
 
-						err := masterCluster.Clear()
-						Expect(err).NotTo(HaveOccurred())
-
 						err = masterPgBackRest.RestoreToTransactionId(config.PgBackRest.Stanza, txId)
 						Expect(err).NotTo(HaveOccurred())
 					})
@@ -308,7 +279,7 @@ var _ = Describe("a PostgreSQL cluster", func() {
 			})
 
 			// https://pgbackrest.org/user-guide.html#replication/hot-standby
-			Context("a hot standby is restored from scratch", func() {
+			Context("a hot standby exists", func() {
 				var standbySSH *sshrunner.Runner
 				var standbyPgBackRest pgbackrest.Controller
 				var standbyCluster cluster.Controller
@@ -332,15 +303,10 @@ var _ = Describe("a PostgreSQL cluster", func() {
 					Expect(err).NotTo(HaveOccurred())
 				})
 
-				It("provides the important information", func() {
+				It("can be restored to provide the same data as the master", func() {
 					By("stopping the cluster", func() {
 						err = standbyCluster.Stop()
 						Expect(err).NotTo(HaveOccurred())
-					})
-
-					By("removing all files from the PostgreSQL data directory", func() {
-						err = standbyCluster.Clear()
-						Expect(err).ToNot(HaveOccurred())
 					})
 
 					By("restoring the backup", func() {

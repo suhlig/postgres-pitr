@@ -31,5 +31,3 @@ standby:
   <<: *master
   host: 192.168.71.30
   local_port: 16432
-
-# TODO Move database to its own top-level key because it is somewhat independent from the cluster

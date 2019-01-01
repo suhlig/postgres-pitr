@@ -54,7 +54,12 @@ $ bin/ginkgo -v -r
 
 # TODO
 
+* Try to restore data that is more dynamic than "Important Data"
+* Merge cluster and pgbackrest controllers
+  => move `stop + restore + start` as a single operation into the pbbackrest controller
 * Try to get rid of port forwarding by connecting to postgres via the 192.168.*.* network instead. Needs a different allow statement in postgres config.
+* Separate *database* config (incl. db name, user and password) from DB *cluster* config
+* Optionally restore only a selected databases; see https://pgbackrest.org/user-guide.html#restore/option-db-include
 * Do not rely on the `main` cluster, but create a separate one (`sudo pg_createcluster 9.4 demo` etc.)
 * Run `pg_create_restore_point` through native DB driver instead of SSH
 * Fix poor error handling in the controllers

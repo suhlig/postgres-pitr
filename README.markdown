@@ -54,6 +54,7 @@ $ bin/ginkgo -v -r
 
 # TODO
 
+* Improve error returned by Runner, e.g. https://golangbot.com/custom-errors/
 * Merge cluster and pgbackrest controllers
   => move `stop + restore + start` as a single operation into the pbbackrest controller
 * Try to get rid of port forwarding by connecting to postgres via the 192.168.*.* network instead. Needs a different allow statement in postgres config.

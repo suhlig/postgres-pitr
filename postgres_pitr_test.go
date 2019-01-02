@@ -334,6 +334,14 @@ var _ = Describe("a PostgreSQL cluster", func() {
 						Expect(count).To(Equal(1))
 					})
 				})
+
+				XIt("does not allow writes (read-only)", func() {
+
+				})
+
+				XIt("allows subsequent restores while running", func() {
+
+				})
 			})
 		})
 	})

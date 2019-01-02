@@ -1,12 +1,14 @@
 package postgres_pitr_test
 
 import (
+	"math/rand"
 	"testing"
 
 	"github.com/mikkeloscar/sshconfig"
 	"github.com/suhlig/postgres-pitr/vagrant"
 
 	. "github.com/onsi/ginkgo"
+	config "github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
 )
 
@@ -20,6 +22,8 @@ var _ = BeforeSuite(func() {
 
 	masterHost = *hosts["master"]
 	standbyHost = *hosts["standby"]
+
+	rand.Seed(config.GinkgoConfig.RandomSeed)
 })
 
 func TestPostgresPitr(t *testing.T) {

@@ -54,8 +54,6 @@ $ bin/ginkgo -v -r
 
 # TODO
 
-* Move `controller.Error` to be a top-level type, incl. it's `Error()` function
-* Use the new top-level `Error` in both controllers
 * Try to get rid of port forwarding by connecting to postgres via the 192.168.*.* network instead. Needs a different allow statement in postgres config.
 * Separate *database* config (incl. db name, user and password) from DB *cluster* config
 * Optionally restore only a selected databases; see https://pgbackrest.org/user-guide.html#restore/option-db-include

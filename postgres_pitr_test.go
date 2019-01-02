@@ -125,6 +125,7 @@ var _ = Describe("a PostgreSQL cluster", func() {
 		Context("important data exists", func() {
 			var masterURL string
 			var masterDB *sql.DB
+			var importantData string
 
 			BeforeEach(func() {
 				masterURL, err = config.MasterDatabaseURL()
@@ -136,7 +137,8 @@ var _ = Describe("a PostgreSQL cluster", func() {
 				_, err := masterDB.Exec("create table IF NOT EXISTS important_table (message text)")
 				Expect(err).NotTo(HaveOccurred())
 
-				_, err = masterDB.Exec("insert into important_table values ($1)", "Important Data")
+				importantData = randomName()
+				_, err = masterDB.Exec("insert into important_table values ($1)", importantData)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -173,11 +175,11 @@ var _ = Describe("a PostgreSQL cluster", func() {
 						Expect(err).NotTo(HaveOccurred())
 					})
 
-					By("checking that the important data exists", func() {
-						var message string
-						err = masterDB.QueryRow("select message from important_table").Scan(&message)
+					By(fmt.Sprintf("checking that the important data '%s' exists", importantData), func() {
+						var count int
+						err = masterDB.QueryRow("select count(message) from important_table where message = $1", importantData).Scan(&count)
 						Expect(err).NotTo(HaveOccurred())
-						Expect(message).To(Equal("Important Data"))
+						Expect(count).To(Equal(1))
 					})
 				})
 			})
@@ -217,11 +219,11 @@ var _ = Describe("a PostgreSQL cluster", func() {
 						Expect(err).NotTo(HaveOccurred())
 					})
 
-					By("checking that the important data exists", func() {
-						var message string
-						err = masterDB.QueryRow("select message from important_table").Scan(&message)
+					By(fmt.Sprintf("checking that the important data '%s' exists", importantData), func() {
+						var count int
+						err = masterDB.QueryRow("select count(message) from important_table where message = $1", importantData).Scan(&count)
 						Expect(err).NotTo(HaveOccurred())
-						Expect(message).To(Equal("Important Data"))
+						Expect(count).To(Equal(1))
 					})
 				})
 			})
@@ -237,7 +239,8 @@ var _ = Describe("a PostgreSQL cluster", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(txId).NotTo(BeNil())
 
-					_, err = tx.Exec("insert into important_table values ($1)", "Important Data")
+					importantData = randomName() // make sure we use a new value while in Tx
+					_, err = tx.Exec("insert into important_table values ($1)", importantData)
 					Expect(err).NotTo(HaveOccurred())
 
 					err = tx.Commit()
@@ -269,11 +272,11 @@ var _ = Describe("a PostgreSQL cluster", func() {
 						Expect(err).NotTo(HaveOccurred())
 					})
 
-					By("checking that the important data exists", func() {
-						var message string
-						err = masterDB.QueryRow("select message from important_table").Scan(&message)
+					By(fmt.Sprintf("checking that the important data '%s' exists", importantData), func() {
+						var count int
+						err = masterDB.QueryRow("select count(message) from important_table where message = $1", importantData).Scan(&count)
 						Expect(err).NotTo(HaveOccurred())
-						Expect(message).To(Equal("Important Data"))
+						Expect(count).To(Equal(1))
 					})
 				})
 			})
@@ -304,27 +307,31 @@ var _ = Describe("a PostgreSQL cluster", func() {
 				})
 
 				It("can be restored to provide the same data as the master", func() {
-					By("stopping the cluster", func() {
+					By("creating a new backup of the master", func() {
+						err = masterPgBackRest.Backup(config.PgBackRest.Stanza)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					By("stopping the standby cluster", func() {
 						err = standbyCluster.Stop()
 						Expect(err).NotTo(HaveOccurred())
 					})
 
-					By("restoring the backup", func() {
+					By("restoring the backup on the standby", func() {
 						err = standbyPgBackRest.Restore(config.PgBackRest.Stanza)
 						Expect(err).NotTo(HaveOccurred())
 					})
 
-					By("starting the cluster", func() {
+					By("starting the standby cluster", func() {
 						err = standbyCluster.Start()
 						Expect(err).NotTo(HaveOccurred())
 					})
 
-					By("checking that the important data exists", func() {
-						Eventually(func() string {
-							var message string
-							standbyDB.QueryRow("select message from important_table").Scan(&message)
-							return message
-						}, "20s", "1s").Should(Equal("Important Data"))
+					By(fmt.Sprintf("checking that the important data '%s' exists on the hot standby", importantData), func() {
+						var count int
+						err = standbyDB.QueryRow("select count(message) from important_table where message = $1", importantData).Scan(&count)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(count).To(Equal(1))
 					})
 				})
 			})

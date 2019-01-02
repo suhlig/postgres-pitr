@@ -54,7 +54,6 @@ $ bin/ginkgo -v -r
 
 # TODO
 
-* Try to restore data that is more dynamic than "Important Data"
 * Merge cluster and pgbackrest controllers
   => move `stop + restore + start` as a single operation into the pbbackrest controller
 * Try to get rid of port forwarding by connecting to postgres via the 192.168.*.* network instead. Needs a different allow statement in postgres config.

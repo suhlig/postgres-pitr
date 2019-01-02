@@ -10,9 +10,9 @@ import (
 // Controller provides a way to control a PostgreSQL cluster with the given version and name.
 // It performs its actions using the provided Runner.
 type Controller struct {
-	Runner  pitr.Runner
-	Version string
-	Name    string
+	runner  pitr.Runner
+	version string
+	name    string
 }
 
 // Error encapsulates information about a Controller error
@@ -23,18 +23,18 @@ type Error struct {
 
 // NewController creates a new controller for the cluster with the given version and name
 // All actions will be performed using the passed Runner.
-func NewController(runner pitr.Runner, version, name string) (Controller, error) {
+func NewController(runner pitr.Runner, version, name string) Controller {
 	controller := Controller{}
-	controller.Runner = runner
-	controller.Version = version
-	controller.Name = name
+	controller.runner = runner
+	controller.version = version
+	controller.name = name
 
-	return controller, nil
+	return controller
 }
 
 // Start starts the cluster
 func (ctl Controller) Start() *Error {
-	stdout, stderr, err := ctl.Runner.Run("sudo pg_ctlcluster %s %s start", ctl.Version, ctl.Name)
+	stdout, stderr, err := ctl.runner.Run("sudo pg_ctlcluster %s %s start", ctl.version, ctl.name)
 
 	if err != nil {
 		return &Error{"Could not start the cluster", stdout, stderr}
@@ -45,7 +45,7 @@ func (ctl Controller) Start() *Error {
 
 // IsRunning returns true if the cluster is running
 func (ctl Controller) IsRunning() (bool, error) {
-	_, _, err := ctl.Runner.Run("sudo pg_ctlcluster %s %s status", ctl.Version, ctl.Name)
+	_, _, err := ctl.runner.Run("sudo pg_ctlcluster %s %s status", ctl.version, ctl.name)
 
 	if result, ok := err.(*ssh.ExitError); ok {
 		if result.ExitStatus() == 3 {
@@ -73,7 +73,7 @@ func (ctl Controller) Stop() error {
 		return nil
 	}
 
-	stdout, stderr, err := ctl.Runner.Run("sudo pg_ctlcluster %s %s stop", ctl.Version, ctl.Name)
+	stdout, stderr, err := ctl.runner.Run("sudo pg_ctlcluster %s %s stop", ctl.version, ctl.name)
 
 	if err != nil {
 		return &Error{"Could not stop the cluster", stdout, stderr}

@@ -16,8 +16,7 @@ var _ = Describe("Cluster Controller", func() {
 		ssh, err = ssh.New(masterHost)
 		Expect(err).NotTo(HaveOccurred())
 
-		cluster, err = clstr.NewController(ssh, config.Master.Version, config.Master.ClusterName)
-		Expect(err).NotTo(HaveOccurred())
+		cluster = clstr.NewController(ssh, config.Master.Version, config.Master.ClusterName)
 	})
 
 	Context("a running cluster", func() {
@@ -70,8 +69,7 @@ var _ = Describe("Cluster Controller", func() {
 
 	Context("a non-existing cluster version", func() {
 		BeforeEach(func() {
-			cluster, err = clstr.NewController(ssh, "42", config.Master.ClusterName)
-			Expect(err).NotTo(HaveOccurred())
+			cluster = clstr.NewController(ssh, "42", config.Master.ClusterName)
 		})
 
 		It("provides an error instead of the status of the cluster", func() {
@@ -82,8 +80,7 @@ var _ = Describe("Cluster Controller", func() {
 
 	Context("a non-existing cluster name", func() {
 		BeforeEach(func() {
-			cluster, err = clstr.NewController(ssh, config.Master.Version, "does-not-exist")
-			Expect(err).NotTo(HaveOccurred())
+			cluster = clstr.NewController(ssh, config.Master.Version, "does-not-exist")
 		})
 
 		It("provides an error instead of the status of the cluster", func() {

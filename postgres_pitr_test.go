@@ -71,11 +71,9 @@ var _ = Describe("a PostgreSQL cluster", func() {
 			masterSSH, err = masterSSH.New(masterHost)
 			Expect(err).NotTo(HaveOccurred())
 
-			masterCluster, err = cluster.NewController(masterSSH, config.Master.Version, config.Master.ClusterName)
-			Expect(err).NotTo(HaveOccurred())
+			masterCluster = cluster.NewController(masterSSH, config.Master.Version, config.Master.ClusterName)
+			masterPgBackRest = pgbackrest.NewController(masterSSH, masterCluster)
 
-			masterPgBackRest, err = pgbackrest.NewController(masterSSH)
-			Expect(err).NotTo(HaveOccurred())
 			err = masterPgBackRest.Backup(config.PgBackRest.Stanza)
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -94,12 +92,10 @@ var _ = Describe("a PostgreSQL cluster", func() {
 		// https://pgbackrest.org/user-guide.html#quickstart/perform-restore
 		When("an important file is lost", func() {
 			It("restores the cluster", func() {
-				By("stopping the cluster", func() {
+				By("deleting the pg_control file", func() {
 					err = masterCluster.Stop()
 					Expect(err).NotTo(HaveOccurred())
-				})
 
-				By("deleting the pg_control file", func() {
 					stdout, stderr, err := masterSSH.Run("sudo -u postgres rm --force /var/lib/postgresql/%s/%s/global/pg_control", config.Master.Version, config.Master.ClusterName)
 					Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
 				})
@@ -111,11 +107,6 @@ var _ = Describe("a PostgreSQL cluster", func() {
 
 				By("restoring the backup", func() {
 					err = masterPgBackRest.Restore(config.PgBackRest.Stanza)
-					Expect(err).NotTo(HaveOccurred())
-				})
-
-				By("starting the cluster", func() {
-					err = masterCluster.Start()
 					Expect(err).NotTo(HaveOccurred())
 				})
 			})
@@ -157,21 +148,7 @@ var _ = Describe("a PostgreSQL cluster", func() {
 					})
 
 					By(fmt.Sprintf("restoring the cluster to the point in time when the data was good: %v", backupPointInTime), func() {
-						err = masterCluster.Stop()
-						Expect(err).NotTo(HaveOccurred())
-
 						err = masterPgBackRest.RestoreToPIT(config.PgBackRest.Stanza, backupPointInTime)
-						Expect(err).NotTo(HaveOccurred())
-					})
-
-					By("displaying recovery.conf", func() {
-						stdout, stderr, err := masterSSH.Run("sudo -u postgres cat /var/lib/postgresql/%s/%s/recovery.conf", config.Master.Version, config.Master.ClusterName)
-						println(stdout)
-						Expect(err).ToNot(HaveOccurred(), "stderr: %v\nstdout:%v\n", stderr, stdout)
-					})
-
-					By("starting the cluster", func() {
-						err = masterCluster.Start()
 						Expect(err).NotTo(HaveOccurred())
 					})
 
@@ -201,21 +178,7 @@ var _ = Describe("a PostgreSQL cluster", func() {
 					})
 
 					By(fmt.Sprintf("restoring the cluster to the savepoint when the data was good: %v", savePoint), func() {
-						err = masterCluster.Stop()
-						Expect(err).NotTo(HaveOccurred())
-
 						err = masterPgBackRest.RestoreToSavePoint(config.PgBackRest.Stanza, savePoint)
-						Expect(err).NotTo(HaveOccurred())
-					})
-
-					By("displaying recovery.conf", func() {
-						stdout, stderr, err := masterSSH.Run("sudo -u postgres cat /var/lib/postgresql/%s/%s/recovery.conf", config.Master.Version, config.Master.ClusterName)
-						println(stdout)
-						Expect(err).ToNot(HaveOccurred(), "stderr: %v\nstdout:%v\n", stderr, stdout)
-					})
-
-					By("starting the cluster", func() {
-						err = masterCluster.Start()
 						Expect(err).NotTo(HaveOccurred())
 					})
 
@@ -254,21 +217,7 @@ var _ = Describe("a PostgreSQL cluster", func() {
 					})
 
 					By(fmt.Sprintf("restoring the cluster to the transaction id when the data was good: %v", txId), func() {
-						err = masterCluster.Stop()
-						Expect(err).NotTo(HaveOccurred())
-
-						err = masterPgBackRest.RestoreToTransactionId(config.PgBackRest.Stanza, txId)
-						Expect(err).NotTo(HaveOccurred())
-					})
-
-					By("displaying recovery.conf", func() {
-						stdout, stderr, err := masterSSH.Run("sudo -u postgres cat /var/lib/postgresql/%s/%s/recovery.conf", config.Master.Version, config.Master.ClusterName)
-						println(stdout)
-						Expect(err).ToNot(HaveOccurred(), "stderr: %v\nstdout:%v\n", stderr, stdout)
-					})
-
-					By("starting the cluster", func() {
-						err = masterCluster.Start()
+						err = masterPgBackRest.RestoreToTransactionID(config.PgBackRest.Stanza, txId)
 						Expect(err).NotTo(HaveOccurred())
 					})
 
@@ -293,11 +242,8 @@ var _ = Describe("a PostgreSQL cluster", func() {
 					standbySSH, err = standbySSH.New(standbyHost)
 					Expect(err).NotTo(HaveOccurred())
 
-					standbyCluster, err = cluster.NewController(standbySSH, config.Standby.Version, config.Standby.ClusterName)
-					Expect(err).NotTo(HaveOccurred())
-
-					standbyPgBackRest, err = pgbackrest.NewController(standbySSH)
-					Expect(err).NotTo(HaveOccurred())
+					standbyCluster = cluster.NewController(standbySSH, config.Standby.Version, config.Standby.ClusterName)
+					standbyPgBackRest = pgbackrest.NewController(standbySSH, standbyCluster)
 
 					standbyURL, err = config.StandbyDatabaseURL()
 					Expect(err).NotTo(HaveOccurred())
@@ -312,18 +258,8 @@ var _ = Describe("a PostgreSQL cluster", func() {
 						Expect(err).NotTo(HaveOccurred())
 					})
 
-					By("stopping the standby cluster", func() {
-						err = standbyCluster.Stop()
-						Expect(err).NotTo(HaveOccurred())
-					})
-
 					By("restoring the backup on the standby", func() {
 						err = standbyPgBackRest.Restore(config.PgBackRest.Stanza)
-						Expect(err).NotTo(HaveOccurred())
-					})
-
-					By("starting the standby cluster", func() {
-						err = standbyCluster.Start()
 						Expect(err).NotTo(HaveOccurred())
 					})
 

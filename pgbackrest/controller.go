@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/suhlig/postgres-pitr/cluster"
+
 	pitr "github.com/suhlig/postgres-pitr"
 )
 
@@ -19,20 +21,22 @@ type Info struct {
 
 // Controller provides a way to control pgbackrest
 type Controller struct {
-	Runner pitr.Runner
+	runner  pitr.Runner
+	cluster cluster.Controller
 }
 
 // NewController creates a new controller
-func NewController(runner pitr.Runner) (Controller, error) {
+func NewController(runner pitr.Runner, cluster cluster.Controller) Controller {
 	controller := Controller{}
-	controller.Runner = runner
+	controller.runner = runner
+	controller.cluster = cluster
 
-	return controller, nil
+	return controller
 }
 
 // Info provides a summary of backups for the given stanza
 func (ctl Controller) Info(stanza string) ([]Info, error) {
-	stdout, stderr, err := ctl.Runner.Run("sudo -u postgres pgbackrest info --stanza=%s --output=json", stanza)
+	stdout, stderr, err := ctl.runner.Run("sudo -u postgres pgbackrest info --stanza=%s --output=json", stanza)
 
 	if err != nil {
 		return nil, fmt.Errorf("Error: %v\nstderr:\n%v\nstdout:\n%v\n", err, stdout, stderr)
@@ -43,7 +47,7 @@ func (ctl Controller) Info(stanza string) ([]Info, error) {
 
 // Backup creates a new backup for the given stanza
 func (ctl Controller) Backup(stanza string) error {
-	stdout, stderr, err := ctl.Runner.Run("sudo -u postgres pgbackrest --stanza=%s backup --type=incr", stanza)
+	stdout, stderr, err := ctl.runner.Run("sudo -u postgres pgbackrest --stanza=%s backup --type=incr", stanza)
 
 	if err != nil {
 		return fmt.Errorf("Error: %v\nstderr:\n%v\nstdout:\n%v\n", err, stdout, stderr)
@@ -54,10 +58,22 @@ func (ctl Controller) Backup(stanza string) error {
 
 // Restore a backup for the given stanza
 func (ctl Controller) Restore(stanza string) error {
-	stdout, stderr, err := ctl.Runner.Run("sudo -u postgres pgbackrest --stanza=%s --delta restore", stanza)
+	err := ctl.cluster.Stop()
+
+	if err != nil {
+		return err
+	}
+
+	stdout, stderr, err := ctl.runner.Run("sudo -u postgres pgbackrest --stanza=%s --delta restore", stanza)
 
 	if err != nil {
 		return fmt.Errorf("Error: %v\nstderr:\n%v\nstdout:\n%v\n", err, stdout, stderr)
+	}
+
+	err = ctl.cluster.Start()
+
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -65,7 +81,13 @@ func (ctl Controller) Restore(stanza string) error {
 
 // RestoreToPIT a specific point in time
 func (ctl Controller) RestoreToPIT(stanza string, pointInTime time.Time) error {
-	stdout, stderr, err := ctl.Runner.Run(
+	err := ctl.cluster.Stop()
+
+	if err != nil {
+		return err
+	}
+
+	stdout, stderr, err := ctl.runner.Run(
 		"sudo -u postgres pgbackrest"+
 			" --stanza=%s"+
 			" --delta"+
@@ -80,12 +102,24 @@ func (ctl Controller) RestoreToPIT(stanza string, pointInTime time.Time) error {
 		return fmt.Errorf("Error: %v\nstderr:\n%v\nstdout:\n%v\n", err, stdout, stderr)
 	}
 
+	err = ctl.cluster.Start()
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // RestoreToSavePoint restores to the given savepoint
 func (ctl Controller) RestoreToSavePoint(stanza string, savePoint string) error {
-	stdout, stderr, err := ctl.Runner.Run(
+	err := ctl.cluster.Stop()
+
+	if err != nil {
+		return err
+	}
+
+	stdout, stderr, err := ctl.runner.Run(
 		"sudo -u postgres pgbackrest"+
 			" --stanza=%s"+
 			" --delta"+
@@ -100,12 +134,24 @@ func (ctl Controller) RestoreToSavePoint(stanza string, savePoint string) error 
 		return fmt.Errorf("Error: %v\nstderr:\n%v\nstdout:\n%v\n", err, stdout, stderr)
 	}
 
+	err = ctl.cluster.Start()
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-// RestoreToTransactionId restores to the given savepoint
-func (ctl Controller) RestoreToTransactionId(stanza string, txId int64) error {
-	stdout, stderr, err := ctl.Runner.Run(
+// RestoreToTransactionID restores to the given savepoint
+func (ctl Controller) RestoreToTransactionID(stanza string, txId int64) error {
+	err := ctl.cluster.Stop()
+
+	if err != nil {
+		return err
+	}
+
+	stdout, stderr, err := ctl.runner.Run(
 		"sudo -u postgres pgbackrest"+
 			" --stanza=%s"+
 			" --delta"+
@@ -118,6 +164,12 @@ func (ctl Controller) RestoreToTransactionId(stanza string, txId int64) error {
 
 	if err != nil {
 		return fmt.Errorf("Error: %v\nstderr:\n%v\nstdout:\n%v\n", err, stdout, stderr)
+	}
+
+	err = ctl.cluster.Start()
+
+	if err != nil {
+		return err
 	}
 
 	return nil

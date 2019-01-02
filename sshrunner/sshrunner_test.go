@@ -3,11 +3,11 @@ package sshrunner_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/suhlig/postgres-pitr/sshrunner"
+	ssh "github.com/suhlig/postgres-pitr/sshrunner"
 )
 
 var _ = Describe("SSH Runner", func() {
-	var dbSSH *sshrunner.Runner
+	var ssh *ssh.Runner
 	var err error
 
 	BeforeEach(func() {
@@ -16,19 +16,26 @@ var _ = Describe("SSH Runner", func() {
 		host := hosts["master"]
 		Expect(host).ToNot(BeNil())
 
-		dbSSH, err = dbSSH.New(*host)
+		ssh, err = ssh.New(*host)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
 	It("can run a command", func() {
-		stdout, stderr, err := dbSSH.Run("id")
+		stdout, stderr, err := ssh.Run("id")
 		Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
 		Expect(stdout).To(ContainSubstring("vagrant"))
 	})
 
 	It("can run a command with args", func() {
-		stdout, stderr, err := dbSSH.Run("ls -l")
+		stdout, stderr, err := ssh.Run("ls -l")
 		Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
 		Expect(stdout).To(ContainSubstring("total"))
+	})
+
+	It("provides error output", func() {
+		stdout, stderr, err := ssh.Run("psql")
+		Expect(err).To(HaveOccurred())
+		Expect(stdout).To(BeEmpty())
+		Expect(stderr).ToNot(BeEmpty())
 	})
 })

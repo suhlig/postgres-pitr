@@ -1,10 +1,8 @@
-package postgres_pitr_test
+package pgbackrest_test
 
 import (
 	"database/sql"
 	"fmt"
-	"math/rand"
-	"strings"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -16,24 +14,12 @@ import (
 	"github.com/suhlig/postgres-pitr/sshrunner"
 )
 
-func randomName() string {
-	chars := []rune("abcdefghijklmnopqrstuvwxyz0123456789")
-	length := 16
-	var builder strings.Builder
-
-	for i := 0; i < length; i++ {
-		builder.WriteRune(chars[rand.Intn(len(chars))])
-	}
-
-	return builder.String()
-}
-
-var _ = Describe("a PostgreSQL cluster", func() {
+var _ = Describe("PgBackRest", func() {
 	var config config.Config
 	var err error
 
 	BeforeEach(func() {
-		config, err = config.FromFile("config.yml")
+		config, err = config.FromFile("../config.yml")
 		Expect(err).NotTo(HaveOccurred())
 	})
 

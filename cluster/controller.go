@@ -16,12 +16,11 @@ type Controller struct {
 // NewController creates a new controller for the cluster with the given version and name
 // All actions will be performed using the passed Runner.
 func NewController(runner pitr.Runner, version, name string) Controller {
-	controller := Controller{}
-	controller.runner = runner
-	controller.version = version
-	controller.name = name
-
-	return controller
+	return Controller{
+		runner:  runner,
+		version: version,
+		name:    name,
+	}
 }
 
 // Start starts the cluster
@@ -29,7 +28,11 @@ func (ctl Controller) Start() *pitr.Error {
 	stdout, stderr, err := ctl.runner.Run("sudo pg_ctlcluster %s %s start", ctl.version, ctl.name)
 
 	if err != nil {
-		return &pitr.Error{"Could not start the cluster", stdout, stderr}
+		return &pitr.Error{
+			Message: "Could not start the cluster",
+			Stdout:  stdout,
+			Stderr:  stderr,
+		}
 	}
 
 	return nil

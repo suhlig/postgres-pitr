@@ -1,7 +1,8 @@
-package postgres_pitr_test
+package pgbackrest_test
 
 import (
 	"math/rand"
+	"strings"
 	"testing"
 
 	"github.com/mikkeloscar/sshconfig"
@@ -28,5 +29,17 @@ var _ = BeforeSuite(func() {
 
 func TestPostgresPitr(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "PostgreSQL PITR Suite")
+	RunSpecs(t, "PgBackRest Suite")
+}
+
+func randomName() string {
+	chars := []rune("abcdefghijklmnopqrstuvwxyz0123456789")
+	length := 16
+	var builder strings.Builder
+
+	for i := 0; i < length; i++ {
+		builder.WriteRune(chars[rand.Intn(len(chars))])
+	}
+
+	return builder.String()
 }

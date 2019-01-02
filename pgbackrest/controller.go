@@ -27,11 +27,10 @@ type Controller struct {
 
 // NewController creates a new controller
 func NewController(runner pitr.Runner, cluster cluster.Controller) Controller {
-	controller := Controller{}
-	controller.runner = runner
-	controller.cluster = cluster
-
-	return controller
+	return Controller{
+		runner:  runner,
+		cluster: cluster,
+	}
 }
 
 // Info provides a summary of backups for the given stanza

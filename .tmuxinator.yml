@@ -20,12 +20,12 @@ windows:
 
   - master:
       panes:
-        - psql <%= Shellwords.escape(master.local_url) %>
+        - psql <%= Shellwords.escape(master.url) %>
         - vagrant ssh master
 
   - standby:
       panes:
-        - psql <%= Shellwords.escape(standby.local_url) %>
+        - psql <%= Shellwords.escape(standby.url) %>
         - vagrant ssh standby
 
   - minio:

@@ -21,10 +21,10 @@ var _ = Describe("Minio", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		s3c, err = s3.New(
-			fmt.Sprintf("localhost:%d", config.Minio.LocalPort),
+			fmt.Sprintf("%s:%d", config.Minio.Host, config.Minio.Port),
 			config.Minio.AccessKey,
 			config.Minio.SecretKey,
-			true,
+			config.Minio.UseSSL,
 		)
 		Expect(err).ToNot(HaveOccurred())
 

@@ -29,7 +29,7 @@ var _ = Describe("Config", func() {
 			})
 
 			It("has the database URL", func() {
-				Expect(config.MasterDatabaseURL()).To(Equal("postgres://foobar:9Gp0efB5VYBdeOu-TnbTb5VqjnsLFXw7rUV55SidDk8@localhost:15432/sandbox"))
+				Expect(config.MasterDatabaseURL()).To(Equal("postgres://foobar:9Gp0efB5VYBdeOu-TnbTb5VqjnsLFXw7rUV55SidDk8@192.168.71.10:5432/sandbox"))
 			})
 		})
 
@@ -45,7 +45,7 @@ var _ = Describe("Config", func() {
 			})
 
 			It("has the database URL", func() {
-				Expect(config.StandbyDatabaseURL()).To(Equal("postgres://foobar:9Gp0efB5VYBdeOu-TnbTb5VqjnsLFXw7rUV55SidDk8@localhost:16432/sandbox"))
+				Expect(config.StandbyDatabaseURL()).To(Equal("postgres://foobar:9Gp0efB5VYBdeOu-TnbTb5VqjnsLFXw7rUV55SidDk8@192.168.71.30:5432/sandbox"))
 			})
 		})
 
@@ -57,17 +57,16 @@ var _ = Describe("Config", func() {
 		})
 
 		Context("for minio", func() {
-			It("has a local port", func() {
-				Expect(config.Minio.LocalPort).ToNot(BeNil())
-				Expect(config.Minio.LocalPort).To(BeNumerically(">", 0))
-			})
-
 			It("has an access key", func() {
 				Expect(config.Minio.AccessKey).ToNot(BeEmpty())
 			})
 
 			It("has an secret key", func() {
 				Expect(config.Minio.SecretKey).ToNot(BeEmpty())
+			})
+
+			It("has a URL", func() {
+				Expect(config.BlobstoreURL()).To(Equal("http://192.168.71.20:80/"))
 			})
 		})
 	})

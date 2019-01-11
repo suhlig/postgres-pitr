@@ -54,8 +54,8 @@
 - name: Allow authenticated connections from 10.0.0.0
   lineinfile:
     path: "/etc/postgresql/{{ master.version }}/{{ master.cluster_name }}/pg_hba.conf"
-    regexp: '^host all all 10.0.0.0'
-    line: "host all all 10.0.0.0/8 md5"
+    regexp: '^host all all 192.168.0.0'
+    line: "host all all 192.168.0.0/16 md5"
   notify:
     - PostgreSQL Restarted
   become_user: postgres

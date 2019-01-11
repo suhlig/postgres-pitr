@@ -22,10 +22,6 @@ module PITR
         config.fetch('host')
       end
 
-      def local_port
-        config.fetch('local_port', port)
-      end
-
       def port
         config.fetch('port', URI::Postgres::DEFAULT_PORT)
       end
@@ -47,11 +43,7 @@ module PITR
       end
 
       def url
-        URI::Postgres.build( components(host, port) )
-      end
-
-      def local_url
-        URI::Postgres.build( components('localhost', local_port) )
+        URI::Postgres.build(components(host, port))
       end
 
       private
@@ -77,10 +69,6 @@ module PITR
         config.fetch('host')
       end
 
-      def local_port
-        config.fetch('local_port')
-      end
-
       def port
         config.fetch('port', 443)
       end
@@ -91,6 +79,24 @@ module PITR
 
       def secret_key
         config.fetch('secret_key')
+      end
+
+      def url
+        build_uri(host: host, port: port)
+      end
+
+      def ssl?
+        !!config.fetch('use_ssl')
+      end
+
+      private
+
+      def build_uri(components)
+        if ssl?
+          URI::HTTPS.build(components)
+        else
+          URI::HTTP.build(components)
+        end
       end
     end
   end

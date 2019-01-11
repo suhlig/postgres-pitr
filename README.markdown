@@ -54,8 +54,7 @@ $ bin/ginkgo -v -r
 
 # TODO
 
-* Try to get rid of port forwarding by connecting to postgres via the 192.168.*.* network instead.
-  => Needs a different allow statement in postgres config.
+* Use "net/url" in `config.go`
 * Separate *database* config (incl. db name, user and password) from DB *cluster* config
 * Optionally restore only a selected databases; see https://pgbackrest.org/user-guide.html#restore/option-db-include
 * Do not rely on the `main` cluster, but create a separate one (`sudo pg_createcluster 9.4 demo` etc.)

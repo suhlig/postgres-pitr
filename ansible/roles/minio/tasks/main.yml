@@ -39,6 +39,7 @@
 
 - name: TLS is configured
   include_tasks: tls.yml
+  when: minio.use_ssl
 
 - name: Service is running and enabled at boot
   service:

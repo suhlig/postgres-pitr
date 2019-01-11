@@ -2,7 +2,6 @@ master: &master
   host: 192.168.71.10
   version: '11'
   cluster_name: main
-  local_port: 15432
   name: sandbox
   user: foobar
   password: "9Gp0efB5VYBdeOu-TnbTb5VqjnsLFXw7rUV55SidDk8"
@@ -23,11 +22,11 @@ pgbackrest:
 minio:
   domain: minio.local
   host: 192.168.71.20
-  local_port: 18443
+  port: 80
+  use_ssl: false
   access_key: "5AVl3QpgKTxqTBaIvtTHxL8BM4Hadm6T1bSpWeL9gX"
   secret_key: "mJ5e3GMUPnSaGYSlHzTmxL01Qu20ZtZdMrP8u4H9Fc"
 
 standby:
   <<: *master
   host: 192.168.71.30
-  local_port: 16432

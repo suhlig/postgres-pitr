@@ -38,6 +38,10 @@ module PITR
         config.fetch('password')
       end
 
+      def backup_manager
+        config.fetch('backup_manager')
+      end
+
       def params
         config.fetch('params', {})
       end

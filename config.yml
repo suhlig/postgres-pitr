@@ -27,8 +27,8 @@ wal_g:
 minio:
   domain: minio.local
   host: 192.168.71.20
-  port: 443
-  use_ssl: true
+  port: 80
+  use_ssl: false
   access_key: "5AVl3QpgKTxqTBaIvtTHxL8BM4Hadm6T1bSpWeL9gX"
   secret_key: "mJ5e3GMUPnSaGYSlHzTmxL01Qu20ZtZdMrP8u4H9Fc"
 

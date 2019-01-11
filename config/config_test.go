@@ -66,7 +66,7 @@ var _ = Describe("Config", func() {
 			})
 
 			It("has a URL", func() {
-				Expect(config.BlobstoreURL()).To(Equal("https://192.168.71.20:443/"))
+				Expect(config.BlobstoreURL()).To(Equal("http://192.168.71.20:80/"))
 			})
 		})
 	})

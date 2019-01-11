@@ -9,8 +9,8 @@ import (
 // It performs its actions using the provided Runner.
 type Controller struct {
 	runner  pitr.Runner
-	version string
-	name    string
+	Version string
+	Name    string
 }
 
 // NewController creates a new controller for the cluster with the given version and name
@@ -18,14 +18,14 @@ type Controller struct {
 func NewController(runner pitr.Runner, version, name string) Controller {
 	return Controller{
 		runner:  runner,
-		version: version,
-		name:    name,
+		Version: version,
+		Name:    name,
 	}
 }
 
 // Start starts the cluster
 func (ctl Controller) Start() *pitr.Error {
-	stdout, stderr, err := ctl.runner.Run("sudo pg_ctlcluster %s %s start", ctl.version, ctl.name)
+	stdout, stderr, err := ctl.runner.Run("sudo pg_ctlcluster %s %s start", ctl.Version, ctl.Name)
 
 	if err != nil {
 		return &pitr.Error{
@@ -40,7 +40,7 @@ func (ctl Controller) Start() *pitr.Error {
 
 // IsRunning returns true if the cluster is running
 func (ctl Controller) IsRunning() (bool, *pitr.Error) {
-	stdout, stderr, err := ctl.runner.Run("sudo pg_ctlcluster %s %s status", ctl.version, ctl.name)
+	stdout, stderr, err := ctl.runner.Run("sudo pg_ctlcluster %s %s status", ctl.Version, ctl.Name)
 
 	if result, ok := err.(*ssh.ExitError); ok {
 		if result.ExitStatus() == 3 { // server is stopped
@@ -71,7 +71,7 @@ func (ctl Controller) Stop() *pitr.Error {
 		return nil
 	}
 
-	stdout, stderr, runErr := ctl.runner.Run("sudo pg_ctlcluster %s %s stop", ctl.version, ctl.name)
+	stdout, stderr, runErr := ctl.runner.Run("sudo pg_ctlcluster %s %s stop", ctl.Version, ctl.Name)
 
 	if runErr != nil {
 		return &pitr.Error{

@@ -35,8 +35,8 @@ func NewController(runner pitr.Runner, cluster cluster.Controller) Controller {
 }
 
 // Backup creates a new backup for the given cluster version and -name
-func (ctl Controller) Backup(clusterVersion, clusterName string) *pitr.Error {
-	stdout, stderr, err := ctl.runner.Run("sudo -u postgres /opt/wal-g/bin/base-backup /var/lib/postgresql/%s/%s", clusterVersion, clusterName)
+func (ctl Controller) Backup() *pitr.Error {
+	stdout, stderr, err := ctl.runner.Run("sudo -u postgres /opt/wal-g/bin/base-backup /var/lib/postgresql/%s/%s", ctl.cluster.Version, ctl.cluster.Name)
 
 	if err != nil {
 		return &pitr.Error{

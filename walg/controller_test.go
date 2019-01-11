@@ -38,7 +38,7 @@ var _ = Describe("WAL-G controller", func() {
 		})
 
 		JustBeforeEach(func() {
-			err = wlg.Backup(config.Master.Version, config.Master.ClusterName)
+			err = wlg.Backup()
 			Expect(err).NotTo(HaveOccurred())
 		})
 

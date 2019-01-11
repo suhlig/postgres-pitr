@@ -51,7 +51,7 @@
     state: present
   become_user: postgres
 
-- name: Allow authenticated connections from 10.0.0.0
+- name: Allow authenticated connections from private network
   lineinfile:
     path: "/etc/postgresql/{{ master.version }}/{{ master.cluster_name }}/pg_hba.conf"
     regexp: '^host all all 192.168.0.0'

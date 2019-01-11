@@ -41,6 +41,13 @@
   include_tasks: tls.yml
   when: minio.use_ssl
 
+- name: Minio can bind to to privileged ports
+  capabilities:
+    path: /usr/local/bin/minio
+    capability: cap_net_bind_service+ep
+    state: present
+  become: true
+
 - name: Service is running and enabled at boot
   service:
     name: minio

@@ -45,6 +45,12 @@ $ bin/ginkgo -v -r
   $ scripts/watch
   ```
 
+* Optionally, run the linter:
+
+  ```sh
+  $ bin/golint ./...
+  ```
+
 # References
 
 * [anishnath](https://github.com/anishnath/postgres) describes a manual approach

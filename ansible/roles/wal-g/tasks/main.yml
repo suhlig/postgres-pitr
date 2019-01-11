@@ -1,0 +1,39 @@
+- name: Directory exists
+  file:
+    path: /opt/wal-g/bin
+    state: directory
+    mode: 0755
+
+- name: Fetch binary
+  unarchive:
+    src: https://github.com/wal-g/wal-g/releases/download/v0.2.3/wal-g.linux-amd64.tar.gz
+    dest: /opt/wal-g/bin/
+    remote_src: yes
+
+- name: Archive script is present
+  copy:
+    src: "{{ item }}"
+    dest: /opt/wal-g/bin/
+    mode: 0755
+  loop:
+    - archive
+    - base-backup
+    - list-backups
+
+- name: Environment variables are present
+  template:
+    src: environment.j2
+    dest: /opt/wal-g/environment
+
+- name: Archiving is configured
+  lineinfile:
+    path: "/etc/postgresql/{{ master.version }}/{{ master.cluster_name }}/postgresql.conf"
+    line: "{{ item }}"
+  loop:
+    - 'wal_level = hot_standby'
+    - 'max_wal_senders = 3'
+    - 'archive_mode = on'
+    - "archive_command = '/opt/wal-g/bin/archive %p'"
+  notify:
+    - PostgreSQL Restarted
+  become_user: postgres

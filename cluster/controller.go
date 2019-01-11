@@ -83,3 +83,18 @@ func (ctl Controller) Stop() *pitr.Error {
 
 	return nil
 }
+
+// Clear removes all files from the cluster's data directory
+func (ctl Controller) Clear() *pitr.Error {
+	stdout, stderr, err := ctl.runner.Run("sudo -u postgres find /var/lib/postgresql/%s/%s -mindepth 1 -delete", ctl.Version, ctl.Name)
+
+	if err != nil {
+		return &pitr.Error{
+			Message: "Could not clear the cluster's data directory",
+			Stdout:  stdout,
+			Stderr:  stderr,
+		}
+	}
+
+	return nil
+}

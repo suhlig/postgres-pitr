@@ -6,7 +6,7 @@
     - common
     - postgres
     - minio-client
-    - pgbackrest-master
+    - wal-g
 
 - hosts: db-standbys
   become: true

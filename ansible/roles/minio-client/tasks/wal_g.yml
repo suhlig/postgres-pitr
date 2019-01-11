@@ -1,0 +1,21 @@
+- name: Virtual host for the bucket is present in /etc/hosts
+  lineinfile:
+    dest: /etc/hosts
+    line: "{{ minio.host }} {{ wal_g.s3_bucket }}.{{ minio.domain }}"
+    state: present
+
+- name: Connection to Minio is configured
+  command: "mc config host add minio http://{{ minio.host }} {{ minio.access_key }} {{ minio.secret_key }}"
+  become: false
+
+- name: S3 bucket exists
+  s3_bucket:
+    name: "{{ wal_g.s3_bucket }}"
+    versioning: false
+    s3_url: "http://{{ minio.host }}"
+    aws_access_key: "{{ minio.access_key }}"
+    aws_secret_key: "{{ minio.secret_key }}"
+    validate_certs: false
+    ceph: true # https://github.com/ansible/ansible/issues/27099
+    state: present
+  ignore_errors: true # https://github.com/ansible/ansible/issues/42501

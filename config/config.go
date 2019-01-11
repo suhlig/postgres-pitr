@@ -7,6 +7,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+// Config provides the configuration for this project
 type Config struct {
 	Master struct {
 		Version     string

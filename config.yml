@@ -9,7 +9,7 @@ master: &master
   # params:
   #   sslmode: verify-full
   #   connect_timeout: 10
-  backup_manager: pgbackrest
+  backup_manager: wal_g
 
 pgbackrest:
   stanza: pitr
@@ -19,6 +19,10 @@ pgbackrest:
   # If present, encryption is configured according to
   # https://pgbackrest.org/user-guide.html#quickstart/configure-encryption
   cipher_pass: "FNqDM9S6zbroiFY50Y94uNPYgOYXRvkE6RA/jmoPxj3wbn9wWNhUSahQ0nlf9ItH"
+
+wal_g:
+  s3_bucket: walg-backup
+  s3_path: foobar
 
 minio:
   domain: minio.local

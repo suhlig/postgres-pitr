@@ -12,6 +12,6 @@ gem install tmuxinator
 
 echo Installing go dependencies:
 go mod download
-GOBIN="$SCRIPTS_DIR/../bin" go install github.com/onsi/ginkgo/ginkgo
+GOBIN="$SCRIPTS_DIR/../bin" go install github.com/onsi/ginkgo/ginkgo golang.org/x/lint/golint
 
 echo Done.

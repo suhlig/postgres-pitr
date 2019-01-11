@@ -173,7 +173,7 @@ func (ctl Controller) RestoreToSavePoint(stanza string, savePoint string) *pitr.
 }
 
 // RestoreToTransactionID restores to the given savepoint
-func (ctl Controller) RestoreToTransactionID(stanza string, txId int64) *pitr.Error {
+func (ctl Controller) RestoreToTransactionID(stanza string, txID int64) *pitr.Error {
 	err := ctl.cluster.Stop()
 
 	if err != nil {
@@ -188,7 +188,7 @@ func (ctl Controller) RestoreToTransactionID(stanza string, txId int64) *pitr.Er
 			" --target=\"%d\""+
 			" restore",
 		stanza,
-		txId,
+		txID,
 	)
 
 	if runErr != nil {

@@ -4,10 +4,6 @@
     line: "{{ minio.host }} {{ wal_g.s3_bucket }}.{{ minio.domain }}"
     state: present
 
-- name: Connection to Minio is configured
-  command: "mc config host add minio http://{{ minio.host }} {{ minio.access_key }} {{ minio.secret_key }}"
-  become: false
-
 - name: S3 bucket exists
   s3_bucket:
     name: "{{ wal_g.s3_bucket }}"
@@ -19,3 +15,7 @@
     ceph: true # https://github.com/ansible/ansible/issues/27099
     state: present
   ignore_errors: true # https://github.com/ansible/ansible/issues/42501
+
+- name: Connection to Minio is configured
+  command: "mc config host add minio http://{{ minio.host }} {{ minio.access_key }} {{ minio.secret_key }}"
+  become: false

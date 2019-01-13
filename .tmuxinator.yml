@@ -14,8 +14,8 @@ windows:
   - tests:
       layout: tiled
       panes:
-        - vagrant ssh master -c 'sudo -u postgres tail -f /var/log/postgresql/postgresql-<%= master.version %>-main.log'
-        - vagrant ssh standby -c 'sudo -u postgres tail -f /var/log/postgresql/postgresql-<%= master.version %>-main.log'
+        - vagrant ssh master -c 'sudo --user postgres tail -f /var/log/postgresql/postgresql-<%= master.version %>-main.log'
+        - vagrant ssh standby -c 'sudo --user postgres tail -f /var/log/postgresql/postgresql-<%= master.version %>-main.log'
         - bin/ginkgo -v -r; bin/ginkgo watch -v -r
 
   - master:
@@ -30,7 +30,7 @@ windows:
 
   - minio:
       panes:
-        - vagrant ssh minio -c 'sudo -u minio tail -f /var/log/minio.log'
+        - vagrant ssh minio -c 'sudo --user minio tail -f /var/log/minio.log'
         - vagrant ssh minio
 
   - deployment:

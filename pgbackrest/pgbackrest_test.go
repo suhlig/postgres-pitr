@@ -57,7 +57,7 @@ var _ = Describe("PgBackRest", func() {
 					err = masterCluster.Stop()
 					Expect(err).NotTo(HaveOccurred())
 
-					stdout, stderr, err := masterSSH.Run("sudo -u postgres rm --force /var/lib/postgresql/%s/%s/global/pg_control", config.Master.Version, config.Master.ClusterName)
+					stdout, stderr, err := masterSSH.Run("sudo --user postgres rm --force /var/lib/postgresql/%s/%s/global/pg_control", config.Master.Version, config.Master.ClusterName)
 					Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
 				})
 
@@ -128,7 +128,7 @@ var _ = Describe("PgBackRest", func() {
 				BeforeEach(func() {
 					savePoint = randomName()
 
-					stdout, stderr, err := masterSSH.Run("sudo -u postgres psql -c \"select pg_create_restore_point('%s')\"", savePoint)
+					stdout, stderr, err := masterSSH.Run("sudo --user postgres psql -c \"select pg_create_restore_point('%s')\"", savePoint)
 					Expect(err).ToNot(HaveOccurred(), "stderr: %v\nstdout:%v\n", stderr, stdout)
 				})
 

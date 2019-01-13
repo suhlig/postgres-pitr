@@ -35,7 +35,7 @@ func NewController(runner pitr.Runner, cluster cluster.Controller) Controller {
 
 // Info provides a summary of backups for the given stanza
 func (ctl Controller) Info(stanza string) ([]Info, *pitr.Error) {
-	stdout, stderr, err := ctl.runner.Run("sudo -u postgres pgbackrest info --stanza=%s --output=json", stanza)
+	stdout, stderr, err := ctl.runner.Run("sudo --user postgres pgbackrest info --stanza=%s --output=json", stanza)
 
 	if err != nil {
 		return nil, &pitr.Error{
@@ -60,7 +60,7 @@ func (ctl Controller) Info(stanza string) ([]Info, *pitr.Error) {
 
 // Backup creates a new backup for the given stanza
 func (ctl Controller) Backup(stanza string) *pitr.Error {
-	stdout, stderr, err := ctl.runner.Run("sudo -u postgres pgbackrest --stanza=%s backup --type=incr", stanza)
+	stdout, stderr, err := ctl.runner.Run("sudo --user postgres pgbackrest --stanza=%s backup --type=incr", stanza)
 
 	if err != nil {
 		return &pitr.Error{
@@ -81,7 +81,7 @@ func (ctl Controller) Restore(stanza string) *pitr.Error {
 		return err
 	}
 
-	stdout, stderr, runErr := ctl.runner.Run("sudo -u postgres pgbackrest --stanza=%s --delta restore", stanza)
+	stdout, stderr, runErr := ctl.runner.Run("sudo --user postgres pgbackrest --stanza=%s --delta restore", stanza)
 
 	if runErr != nil {
 		return &pitr.Error{
@@ -109,7 +109,7 @@ func (ctl Controller) RestoreToPIT(stanza string, pointInTime time.Time) *pitr.E
 	}
 
 	stdout, stderr, runErr := ctl.runner.Run(
-		"sudo -u postgres pgbackrest"+
+		"sudo --user postgres pgbackrest"+
 			" --stanza=%s"+
 			" --delta"+
 			" --type=time"+
@@ -145,7 +145,7 @@ func (ctl Controller) RestoreToSavePoint(stanza string, savePoint string) *pitr.
 	}
 
 	stdout, stderr, runErr := ctl.runner.Run(
-		"sudo -u postgres pgbackrest"+
+		"sudo --user postgres pgbackrest"+
 			" --stanza=%s"+
 			" --delta"+
 			" --type=name"+
@@ -181,7 +181,7 @@ func (ctl Controller) RestoreToTransactionID(stanza string, txID int64) *pitr.Er
 	}
 
 	stdout, stderr, runErr := ctl.runner.Run(
-		"sudo -u postgres pgbackrest"+
+		"sudo --user postgres pgbackrest"+
 			" --stanza=%s"+
 			" --delta"+
 			" --type=xid"+

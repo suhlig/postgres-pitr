@@ -23,31 +23,6 @@ var _ = Describe("PgBackRest", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	Context("Database URL exists", func() {
-		var masterURL string
-		var masterDB *sql.DB
-
-		BeforeEach(func() {
-			masterURL, err = config.MasterDatabaseURL()
-			Expect(err).NotTo(HaveOccurred())
-
-			masterDB, err = sql.Open("postgres", masterURL)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("can be pinged", func() {
-			err = masterDB.Ping()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("has the expected server version", func() {
-			var version int
-			err = masterDB.QueryRow("SHOW server_version_num;").Scan(&version)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(version).To(BeNumerically(">=", 110000))
-		})
-	})
-
 	Context("with at least one base backup", func() {
 		var masterSSH *sshrunner.Runner
 		var masterPgBackRest pgbackrest.Controller

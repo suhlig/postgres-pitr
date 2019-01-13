@@ -1,7 +1,0 @@
-#!/bin/bash
-
-set -euo pipefail
-IFS=$'\n\t'
-
-source /opt/wal-g/environment
-/opt/wal-g/bin/wal-g backup-list

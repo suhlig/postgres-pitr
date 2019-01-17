@@ -11,8 +11,8 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/suhlig/postgres-pitr/cluster"
 	"github.com/suhlig/postgres-pitr/config"
-	"github.com/suhlig/postgres-pitr/sshrunner"
 	"github.com/suhlig/postgres-pitr/walg"
+	"github.com/suhlig/postgres-pitr/sshrunner"
 )
 
 var _ = Describe("WAL-G controller", func() {
@@ -65,7 +65,6 @@ var _ = Describe("WAL-G controller", func() {
 				})
 
 				By("restoring the backup", func() {
-					// WIP Fails to start, probably because backup_label is still there and recovery.conf does not exist
 					err = wlg.RestoreLatest()
 					Expect(err).NotTo(HaveOccurred())
 				})

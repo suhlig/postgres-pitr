@@ -1,6 +1,7 @@
 package walg
 
 import (
+	"fmt"
 	"time"
 
 	pitr "github.com/suhlig/postgres-pitr"
@@ -69,6 +70,19 @@ func (ctl Controller) Restore(name string) *pitr.Error {
 	}
 
 	stdout, stderr, runErr := ctl.runner.Run("sudo --login --user postgres wal-g backup-fetch /var/lib/postgresql/%s/%s %s", ctl.cluster.Version, ctl.cluster.Name, name)
+
+	if runErr != nil {
+		return &pitr.Error{
+			Message: runErr.Error(),
+			Stdout:  stdout,
+			Stderr:  stderr,
+		}
+	}
+
+	// Create recovery.conf
+	pgDataDir := fmt.Sprintf("/var/lib/postgresql/%s/%s", ctl.cluster.Version, ctl.cluster.Name)
+	echoCmd := `echo "restore_command = 'bash --login -c \"wal-g wal-fetch %f %p\"'"`
+	stdout, stderr, runErr = ctl.runner.Run("%s | sudo --login --user postgres tee %s/recovery.conf", echoCmd, pgDataDir)
 
 	if runErr != nil {
 		return &pitr.Error{

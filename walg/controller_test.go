@@ -55,7 +55,7 @@ var _ = Describe("WAL-G controller", func() {
 					err = masterCluster.Stop()
 					Expect(err).NotTo(HaveOccurred())
 
-					stdout, stderr, err := ssh.Run("sudo --user postgres rm --force /var/lib/postgresql/%s/%s/global/pg_control", config.Master.Version, config.Master.ClusterName)
+					stdout, stderr, err := ssh.Run("sudo --user postgres rm --force %s/global/pg_control", masterCluster.DataDirectory())
 					Expect(err).ToNot(HaveOccurred(), "stderr was: '%v', stdout was: '%v'", stderr, stdout)
 				})
 

@@ -21,6 +21,10 @@ var _ = Describe("Cluster Controller", func() {
 		cluster = clstr.NewController(ssh, config.Master.Version, config.Master.ClusterName)
 	})
 
+	It("knows the data directory", func() {
+			Expect(cluster.DataDirectory()).To(Equal("/var/lib/postgresql/11/main"))
+	})
+
 	Context("a running cluster", func() {
 		BeforeEach(func() {
 			cluster.Start()
@@ -66,7 +70,6 @@ var _ = Describe("Cluster Controller", func() {
 				Expect(version).To(BeNumerically(">=", 110000))
 			})
 		})
-
 	})
 
 	Context("a stopped cluster", func() {

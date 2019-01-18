@@ -37,7 +37,7 @@ func NewController(runner pitr.Runner, cluster cluster.Controller) Controller {
 
 // Backup creates a new backup for the given cluster version and -name
 func (ctl Controller) Backup() *pitr.Error {
-	stdout, stderr, err := ctl.runner.Run("sudo --login --user postgres wal-g backup-push /var/lib/postgresql/%s/%s", ctl.cluster.Version, ctl.cluster.Name)
+	stdout, stderr, err := ctl.runner.Run("sudo --login --user postgres wal-g backup-push %s", ctl.cluster.DataDirectory())
 
 	if err != nil {
 		return &pitr.Error{
@@ -69,7 +69,7 @@ func (ctl Controller) Restore(name string) *pitr.Error {
 		return err
 	}
 
-	stdout, stderr, runErr := ctl.runner.Run("sudo --login --user postgres wal-g backup-fetch /var/lib/postgresql/%s/%s %s", ctl.cluster.Version, ctl.cluster.Name, name)
+	stdout, stderr, runErr := ctl.runner.Run("sudo --login --user postgres wal-g backup-fetch %s %s", ctl.cluster.DataDirectory(), name)
 
 	if runErr != nil {
 		return &pitr.Error{
@@ -80,9 +80,8 @@ func (ctl Controller) Restore(name string) *pitr.Error {
 	}
 
 	// Create recovery.conf
-	pgDataDir := fmt.Sprintf("/var/lib/postgresql/%s/%s", ctl.cluster.Version, ctl.cluster.Name)
 	echoCmd := `echo "restore_command = 'bash --login -c \"wal-g wal-fetch %f %p\"'"`
-	stdout, stderr, runErr = ctl.runner.Run("%s | sudo --login --user postgres tee %s/recovery.conf", echoCmd, pgDataDir)
+	stdout, stderr, runErr = ctl.runner.Run("%s | sudo --login --user postgres tee %s/recovery.conf", echoCmd, ctl.cluster.DataDirectory())
 
 	if runErr != nil {
 		return &pitr.Error{
@@ -109,12 +108,11 @@ func (ctl Controller) RestoreToTransactionID(txID int64) *pitr.Error {
 		return err
 	}
 
-	pgDataDir := fmt.Sprintf("/var/lib/postgresql/%s/%s", ctl.cluster.Version, ctl.cluster.Name)
 	echoCmd := `echo "restore_command = 'bash --login -c \"wal-g wal-fetch %f %p\"'"`
-	stdout, stderr, runErr := ctl.runner.Run("%s | sudo --login --user postgres tee %s/recovery.conf", echoCmd, pgDataDir)
+	stdout, stderr, runErr := ctl.runner.Run("%s | sudo --login --user postgres tee %s/recovery.conf", echoCmd, ctl.cluster.DataDirectory())
 
 	echoCmd = fmt.Sprintf("echo recovery_target_xid = %d", txID)
-	stdout, stderr, runErr = ctl.runner.Run("%s | sudo --login --user postgres tee --append %s/recovery.conf", echoCmd, pgDataDir)
+	stdout, stderr, runErr = ctl.runner.Run("%s | sudo --login --user postgres tee --append %s/recovery.conf", echoCmd, ctl.cluster.DataDirectory())
 
 	if runErr != nil {
 		return &pitr.Error{
@@ -123,6 +121,8 @@ func (ctl Controller) RestoreToTransactionID(txID int64) *pitr.Error {
 			Stderr:  stderr,
 		}
 	}
+
+	// TODO Do the `wal-g backup-fetch`, potentially after clearing the data directory
 
 	err = ctl.cluster.Start()
 

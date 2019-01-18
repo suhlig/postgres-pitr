@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"fmt"
 	pitr "github.com/suhlig/postgres-pitr"
 	"golang.org/x/crypto/ssh"
 )
@@ -84,9 +85,14 @@ func (ctl Controller) Stop() *pitr.Error {
 	return nil
 }
 
+// DataDirectory provides the file system location of the data directory
+func (ctl Controller) DataDirectory() string {
+	return fmt.Sprintf("/var/lib/postgresql/%s/%s", ctl.Version, ctl.Name)
+}
+
 // Clear removes all files from the cluster's data directory
 func (ctl Controller) Clear() *pitr.Error {
-	stdout, stderr, err := ctl.runner.Run("sudo -u postgres find /var/lib/postgresql/%s/%s -mindepth 1 -delete", ctl.Version, ctl.Name)
+	stdout, stderr, err := ctl.runner.Run("sudo -u postgres find %s -mindepth 1 -delete", ctl.DataDirectory())
 
 	if err != nil {
 		return &pitr.Error{

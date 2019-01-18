@@ -11,8 +11,8 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/suhlig/postgres-pitr/cluster"
 	"github.com/suhlig/postgres-pitr/config"
-	"github.com/suhlig/postgres-pitr/walg"
 	"github.com/suhlig/postgres-pitr/sshrunner"
+	"github.com/suhlig/postgres-pitr/walg"
 )
 
 var _ = Describe("WAL-G controller", func() {
@@ -35,9 +35,7 @@ var _ = Describe("WAL-G controller", func() {
 
 			masterCluster = cluster.NewController(ssh, config.Master.Version, config.Master.ClusterName)
 			wlg = walg.NewController(ssh, masterCluster)
-		})
 
-		JustBeforeEach(func() {
 			err = wlg.Backup()
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -85,14 +83,11 @@ var _ = Describe("WAL-G controller", func() {
 
 				_, err := masterDB.Exec("create table IF NOT EXISTS important_table (message text)")
 				Expect(err).NotTo(HaveOccurred())
-
-				importantData = randomName()
-				_, err = masterDB.Exec("insert into important_table values ($1)", importantData)
-				Expect(err).NotTo(HaveOccurred())
 			})
 
 			When("saving a transaction id where everything was good", func() {
 				var txId int64
+				var walID string
 
 				BeforeEach(func() {
 					tx, err := masterDB.Begin()
@@ -108,9 +103,12 @@ var _ = Describe("WAL-G controller", func() {
 
 					err = tx.Commit()
 					Expect(err).NotTo(HaveOccurred())
+
+					err = masterDB.QueryRow("select pg_switch_wal()").Scan(&walID)
+					Expect(err).NotTo(HaveOccurred())
 				})
 
-				FIt("can be restored to the given transaction id", func() {
+				It("can be restored to the given transaction id", func() {
 					By("dropping the important table", func() {
 						_, err := masterDB.Exec("drop table important_table")
 						Expect(err).NotTo(HaveOccurred())
@@ -121,11 +119,16 @@ var _ = Describe("WAL-G controller", func() {
 						Expect(err).NotTo(HaveOccurred())
 					})
 
-					By(fmt.Sprintf("checking that the important data '%s' exists", importantData), func() {
+					By(fmt.Sprintf("checking that the important data '%s' exists (archived as %s)", importantData, walID), func() {
 						var count int
 						err = masterDB.QueryRow("select count(message) from important_table where message = $1", importantData).Scan(&count)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(count).To(Equal(1))
+					})
+
+					By("checking that we can write to the restored database", func() {
+						_, err = masterDB.Exec("insert into important_table values ($1)", randomName())
+						Expect(err).NotTo(HaveOccurred())
 					})
 				})
 			})

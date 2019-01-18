@@ -79,16 +79,10 @@ func (ctl Controller) Restore(name string) *pitr.Error {
 		}
 	}
 
-	// Create recovery.conf
-	echoCmd := `echo "restore_command = 'bash --login -c \"wal-g wal-fetch %f %p\"'"`
-	stdout, stderr, runErr = ctl.runner.Run("%s | sudo --login --user postgres tee %s/recovery.conf", echoCmd, ctl.cluster.DataDirectory())
+	ctl.createRecoveryConf(`restore_command = 'bash --login -c \"wal-g wal-fetch %f %p\"'`)
 
-	if runErr != nil {
-		return &pitr.Error{
-			Message: runErr.Error(),
-			Stdout:  stdout,
-			Stderr:  stderr,
-		}
+	if err != nil {
+		return err
 	}
 
 	err = ctl.cluster.Start()
@@ -108,11 +102,13 @@ func (ctl Controller) RestoreToTransactionID(txID int64) *pitr.Error {
 		return err
 	}
 
-	echoCmd := `echo "restore_command = 'bash --login -c \"wal-g wal-fetch %f %p\"'"`
-	stdout, stderr, runErr := ctl.runner.Run("%s | sudo --login --user postgres tee %s/recovery.conf", echoCmd, ctl.cluster.DataDirectory())
+	err = ctl.cluster.Clear()
 
-	echoCmd = fmt.Sprintf("echo recovery_target_xid = %d", txID)
-	stdout, stderr, runErr = ctl.runner.Run("%s | sudo --login --user postgres tee --append %s/recovery.conf", echoCmd, ctl.cluster.DataDirectory())
+	if err != nil {
+		return err
+	}
+
+	stdout, stderr, runErr := ctl.runner.Run("sudo --login --user postgres wal-g backup-fetch %s %s", ctl.cluster.DataDirectory(), "LATEST")
 
 	if runErr != nil {
 		return &pitr.Error{
@@ -122,7 +118,23 @@ func (ctl Controller) RestoreToTransactionID(txID int64) *pitr.Error {
 		}
 	}
 
-	// TODO Do the `wal-g backup-fetch`, potentially after clearing the data directory
+	ctl.createRecoveryConf(
+		`restore_command = 'bash --login -c \"wal-g wal-fetch %f %p\"'`,
+		fmt.Sprintf("recovery_target_xid = %d", txID),
+		"recovery_target_action=promote",
+	)
+
+	if err != nil {
+		return err
+	}
+
+	if runErr != nil {
+		return &pitr.Error{
+			Message: runErr.Error(),
+			Stdout:  stdout,
+			Stderr:  stderr,
+		}
+	}
 
 	err = ctl.cluster.Start()
 
@@ -156,4 +168,20 @@ func (ctl Controller) List() (*Info, *pitr.Error) {
 	}
 
 	return infos, nil
+}
+
+func (ctl Controller) createRecoveryConf(commands ...string) *pitr.Error {
+	for _, command := range commands {
+		stdout, stderr, runErr := ctl.runner.Run(`echo "%s" | sudo --login --user postgres tee --append %s/recovery.conf`, command, ctl.cluster.DataDirectory())
+
+		if runErr != nil {
+			return &pitr.Error{
+				Message: runErr.Error(),
+				Stdout:  stdout,
+				Stderr:  stderr,
+			}
+		}
+	}
+
+	return nil
 }

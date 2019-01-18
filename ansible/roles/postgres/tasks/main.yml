@@ -51,6 +51,16 @@
     state: present
   become_user: postgres
 
+- name: User can switch WAL segments
+  postgresql_privs:
+    db: "{{ master.name }}"
+    privs: EXECUTE
+    type: function
+    obj: pg_switch_wal()
+    roles: "{{ master.user }}"
+    schema: pg_catalog
+  become_user: postgres
+
 - name: Allow authenticated connections from private network
   lineinfile:
     path: "/etc/postgresql/{{ master.version }}/{{ master.cluster_name }}/pg_hba.conf"

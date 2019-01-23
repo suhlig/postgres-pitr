@@ -28,6 +28,8 @@ var _ = Describe("WAL-G controller", func() {
 		var ssh *sshrunner.Runner
 		var wlg walg.Controller
 		var masterCluster cluster.Controller
+		var masterURL string
+		var masterDB *sql.DB
 
 		BeforeEach(func() {
 			ssh, err = ssh.New(masterHost)
@@ -37,6 +39,12 @@ var _ = Describe("WAL-G controller", func() {
 			wlg = walg.NewController(ssh, masterCluster)
 
 			err = wlg.Backup()
+			Expect(err).NotTo(HaveOccurred())
+
+			masterURL, err = config.MasterDatabaseURL()
+			Expect(err).NotTo(HaveOccurred())
+
+			masterDB, err = sql.Open("postgres", masterURL)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -66,21 +74,20 @@ var _ = Describe("WAL-G controller", func() {
 					err = wlg.RestoreLatest()
 					Expect(err).NotTo(HaveOccurred())
 				})
+
+				By("checking that the restored database is writable", func() {
+					var isReadOnly bool
+					err = masterDB.QueryRow("select pg_is_in_recovery()").Scan(&isReadOnly)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(isReadOnly).To(BeFalse())
+				})
 			})
 		})
 
 		Context("important data exists", func() {
-			var masterURL string
-			var masterDB *sql.DB
 			var importantData string
 
 			BeforeEach(func() {
-				masterURL, err = config.MasterDatabaseURL()
-				Expect(err).NotTo(HaveOccurred())
-
-				masterDB, err = sql.Open("postgres", masterURL)
-				Expect(err).NotTo(HaveOccurred())
-
 				_, err := masterDB.Exec("create table IF NOT EXISTS important_table (message text)")
 				Expect(err).NotTo(HaveOccurred())
 			})

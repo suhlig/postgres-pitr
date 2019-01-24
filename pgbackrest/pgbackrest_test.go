@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/suhlig/postgres-pitr/cluster"
 	"github.com/suhlig/postgres-pitr/config"
+	h "github.com/suhlig/postgres-pitr/helpers"
 	"github.com/suhlig/postgres-pitr/pgbackrest"
 	"github.com/suhlig/postgres-pitr/sshrunner"
 )
@@ -89,7 +90,7 @@ var _ = Describe("PgBackRest", func() {
 				_, err := masterDB.Exec("create table IF NOT EXISTS important_table (message text)")
 				Expect(err).NotTo(HaveOccurred())
 
-				importantData = randomName()
+				importantData = h.RandomName()
 				_, err = masterDB.Exec("insert into important_table values ($1)", importantData)
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -126,7 +127,7 @@ var _ = Describe("PgBackRest", func() {
 				var savePoint string
 
 				BeforeEach(func() {
-					savePoint = randomName()
+					savePoint = h.RandomName()
 
 					stdout, stderr, err := masterSSH.Run("sudo --user postgres psql -c \"select pg_create_restore_point('%s')\"", savePoint)
 					Expect(err).ToNot(HaveOccurred(), "stderr: %v\nstdout:%v\n", stderr, stdout)
@@ -163,7 +164,7 @@ var _ = Describe("PgBackRest", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(txId).NotTo(BeNil())
 
-					importantData = randomName() // make sure we use a new value while in Tx
+					importantData = h.RandomName() // make sure we use a new value while in Tx
 					_, err = tx.Exec("insert into important_table values ($1)", importantData)
 					Expect(err).NotTo(HaveOccurred())
 

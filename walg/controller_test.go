@@ -3,14 +3,13 @@ package walg_test
 import (
 	"database/sql"
 	"fmt"
-	"math/rand"
-	"strings"
 
 	_ "github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/suhlig/postgres-pitr/cluster"
 	"github.com/suhlig/postgres-pitr/config"
+	h "github.com/suhlig/postgres-pitr/helpers"
 	"github.com/suhlig/postgres-pitr/sshrunner"
 	"github.com/suhlig/postgres-pitr/walg"
 )
@@ -104,7 +103,7 @@ var _ = Describe("WAL-G controller", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(txId).NotTo(BeNil())
 
-					importantData = randomName() // make sure we use a new value while in Tx
+					importantData = h.RandomName() // make sure we use a new value while in Tx
 					_, err = tx.Exec("insert into important_table values ($1)", importantData)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -134,7 +133,7 @@ var _ = Describe("WAL-G controller", func() {
 					})
 
 					By("checking that we can write to the restored database", func() {
-						_, err = masterDB.Exec("insert into important_table values ($1)", randomName())
+						_, err = masterDB.Exec("insert into important_table values ($1)", h.RandomName())
 						Expect(err).NotTo(HaveOccurred())
 					})
 				})
@@ -142,16 +141,3 @@ var _ = Describe("WAL-G controller", func() {
 		})
 	})
 })
-
-// TODO This is a copy
-func randomName() string {
-	chars := []rune("abcdefghijklmnopqrstuvwxyz0123456789")
-	length := 16
-	var builder strings.Builder
-
-	for i := 0; i < length; i++ {
-		builder.WriteRune(chars[rand.Intn(len(chars))])
-	}
-
-	return builder.String()
-}
